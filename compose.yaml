@@ -1,0 +1,7 @@
+﻿services:
+  powercleanniederrhein:
+    image: powercleanniederrhein
+    build:
+      context: .
+      dockerfile: Dockerfile
+

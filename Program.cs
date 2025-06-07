@@ -1,10 +1,17 @@
 using PowerCleanNiederrhein.Components;
+using PowerCleanNiederrhein.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddControllers();
+
+// Registrieren des Dummy-Services für das Kontaktformular.
+builder.Services.AddScoped<INotificationService, DummyNotificationService>();
+
 
 var app = builder.Build();
 

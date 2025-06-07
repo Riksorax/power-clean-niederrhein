@@ -196,3 +196,58 @@ footer a:hover {
 html {
     scroll-behavior: smooth;
 }
+
+.content-section h1, .content-section h2, .content-section h3, .content-section h4 {
+    color: #556B2F; /* Moss Green */
+    font-weight: 600;
+}
+.content-section h1 {
+    margin-bottom: 2.5rem;
+    font-size: 2.5rem;
+}
+.content-section h2 { /* Für Paragraphen-Überschriften wie § 1 */
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+.content-section h3 { /* Für Unterpunkte innerhalb der Paragraphen */
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+}
+.content-section h4 { /* Für noch feinere Unterteilungen */
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-style: italic;
+}
+.content-section p, .content-section ul, .content-section ol {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+}
+.content-section ul, .content-section ol {
+    padding-left: 1.5rem;
+}
+.content-section ul li, .content-section ol li {
+    margin-bottom: 0.35rem;
+}
+.content-section a {
+    color: #556B2F;
+    text-decoration: underline;
+}
+.content-section a:hover {
+    color: #455725;
+}
+.disclaimer-box {
+    background-color: #fffbeb; /* Helles Gelb für Warnhinweis */
+    border-left: 5px solid #fbbF24; /* Gelber Rand */
+    padding: 1rem;
+    margin-bottom: 2rem;
+    border-radius: 0.25rem;
+}
+.disclaimer-box p {
+    margin-bottom: 0;
+    color: #713f12; /* Dunkelgelber Text */
+}
