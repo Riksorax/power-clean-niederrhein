@@ -1,0 +1,30 @@
+﻿<section id="erfolge" class="section-padding bg-off-white">
+    <div class="container">
+        <h2 class="text-center fw-bold text-moss-green mb-5 fs-1">Unsere Erfolge sprechen für sich</h2>
+        <div class="row g-4">
+            @{
+                var testimonials = new List<TestimonialViewModel>
+                {
+                    new() { Title = "Steinterrasse wie neu", Text = "\"Unsere Auffahrt war voller Moos. Power Clean Niederrhein hat sie wieder strahlend sauber gemacht!\" - Familie M.", ImageUrl = "https://placehold.co/600x400/6B8E23/FFFFFF?text=Vorher+Nachher+Steine", AltText = "Gereinigte Steine" },
+                    new() { Title = "Holzterrasse erstrahlt", Text = "\"Ich bin begeistert, wie toll unsere Holzterrasse nach der Reinigung aussieht. Absolut empfehlenswert!\" - Herr K.", ImageUrl = "https://placehold.co/600x400/CD853F/FFFFFF?text=Gereinigte+Holzterrasse", AltText = "Gereinigte Holzterrasse" },
+                    new() { Title = "Winterdienst Top!", Text = "\"Auch bei Schnee und Eis konnten wir uns auf Power Clean verlassen. Super Service!\" - Firma S.", ImageUrl = "https://placehold.co/600x400/ADD8E6/333333?text=Sicherer+Gehweg+im+Winter", AltText = "Schneefreier Gehweg" }
+                };
+            }
+            @foreach (var testimonial in testimonials)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@testimonial.ImageUrl" class="card-img-top-custom" alt="@testimonial.AltText" onerror="this.src='https://placehold.co/600x400/cccccc/FFFFFF?text=Bild+nicht+gefunden'">
+                        <div class="card-body bg-beige-sand">
+                            <h3 class="card-title fs-5 fw-semibold text-moss-green mb-2">@testimonial.Title</h3>
+                            <p class="card-text text-dark-gray small">@testimonial.Text</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="text-center mt-5">
+            <a href="#galerie-detail" class="btn btn-moss-green cta-button btn-lg">Mehr Vorher-Nachher-Bilder</a>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,123 @@
+﻿@inject INotificationService NotificationService
+
+<section id="kontakt" class="section-padding bg-off-white">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <!-- Linke Spalte: Kontaktformular -->
+            <div class="col-lg-7">
+                <div class="contact-form-section">
+                    <h2 class="fs-2 fw-semibold text-moss-green mb-4">Schreiben Sie uns</h2>
+                    <EditForm Model="@contactFormModel" OnValidSubmit="@HandleValidSubmit" FormName="contactForm">
+                        <DataAnnotationsValidator />
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label for="name" class="form-label text-light-gray">Name</label>
+                                <InputText id="name" class="form-control" @bind-Value="contactFormModel.Name" />
+                                <ValidationMessage For="@(() => contactFormModel.Name)" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="email" class="form-label text-light-gray">E-Mail</label>
+                                <InputText id="email" type="email" class="form-control" @bind-Value="contactFormModel.Email" />
+                                <ValidationMessage For="@(() => contactFormModel.Email)" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label text-light-gray">Telefon</label>
+                            <InputText id="phone" class="form-control" @bind-Value="contactFormModel.Phone" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="service" class="form-label text-light-gray">Gewünschte Leistung</label>
+                            <InputSelect id="service" class="form-select" @bind-Value="contactFormModel.Service">
+                                <option value="">Bitte auswählen</option>
+                                <option value="terrassenreinigung">Terrassenreinigung</option>
+                                <option value="gehwegreinigung">Gehwegreinigung</option>
+                                <option value="balkonreinigung">Balkonreinigung</option>
+                                <option value="auffahrtreinigung">Auffahrtreinigung</option>
+                                <option value="parkplatzreinigung">Parkplatzreinigung</option>
+                                <option value="winterdienst">Winterdienst</option>
+                                <option value="sonstiges">Sonstiges / Individuelle Anfrage</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => contactFormModel.Service)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label text-light-gray">Ihre Nachricht</label>
+                            <InputTextArea id="message" class="form-control" @bind-Value="contactFormModel.Message" rows="5" />
+                            <ValidationMessage For="@(() => contactFormModel.Message)" />
+                        </div>
+                        <div class="mb-3 form-check">
+                            <InputCheckbox id="privacy" class="form-check-input border-moss-green" @bind-Value="contactFormModel.AcceptPrivacy" />
+                            <label class="form-check-label text-light-gray" for="privacy">Ich habe die <a href="datenschutz.html" class="text-moss-green">Datenschutzerklärung</a> gelesen und akzeptiere diese.</label>
+                             <ValidationMessage For="@(() => contactFormModel.AcceptPrivacy)" />
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-moss-green cta-button w-100 btn-lg" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Senden...</span>
+                                }
+                                else
+                                {
+                                    <span>Nachricht senden</span>
+                                }
+                            </button>
+                        </div>
+                        @if (submitMessage != null)
+                        {
+                            <div class="mt-3 alert @(submitSuccess ? "alert-success" : "alert-danger")">@submitMessage</div>
+                        }
+                    </EditForm>
+                </div>
+            </div>
+            <!-- Rechte Spalte: Kontaktdaten & Servicegebiet (bleibt unverändert) -->
+            <div class="col-lg-5">
+                 <!-- ... HTML für Kontaktdaten & Servicegebiet hier einfügen (wie in der WASM-Version) ... -->
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private ContactFormModel contactFormModel = new ContactFormModel();
+    private bool isSubmitting = false;
+    private string? submitMessage;
+    private bool submitSuccess = false;
+
+    private async Task HandleValidSubmit()
+    {
+        isSubmitting = true;
+        
+        try
+        {
+            // Direkter Aufruf des Server-Services, kein HttpClient notwendig
+            bool success = await NotificationService.SendContactFormNotification(contactFormModel);
+            
+            if (success)
+            {
+                submitMessage = "Vielen Dank! Ihre Anfrage wurde erfolgreich gesendet.";
+                submitSuccess = true;
+                contactFormModel = new ContactFormModel(); // Formular zurücksetzen
+            }
+            else
+            {
+                submitMessage = "Es gab einen Fehler beim Senden Ihrer Anfrage. Bitte versuchen Sie es später erneut.";
+                submitSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            submitMessage = $"Ein unerwarteter Fehler ist aufgetreten: {ex.Message}";
+            submitSuccess = false;
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged(); // UI aktualisieren
+            
+            // Nachricht nach 7 Sekunden ausblenden
+            await Task.Delay(7000); 
+            submitMessage = null;
+            StateHasChanged();
+        }
+    }
+}
