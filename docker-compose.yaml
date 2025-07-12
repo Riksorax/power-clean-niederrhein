@@ -1,0 +1,22 @@
+services:
+  powerclean: # Eindeutiger Service-Name für dieses Projekt
+    image: riksorax/power-clean-niederrhein:latest # Das Image, das von GitHub Actions gebaut wird
+    container_name: powerclean # Eindeutiger Container-Name
+    restart: unless-stopped
+    networks:
+      - traefik-proxy # Verbindet sich mit dem externen Netzwerk von Traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.powerclean.rule=Host(`powerclean.webappniederrhein.de`)"
+      - "traefik.http.routers.powerclean.entrypoints=websecure"
+      - "traefik.http.routers.powerclean.tls.certresolver=letsencrypt"
+      - "traefik.http.services.powerclean.loadbalancer.server.port=8080"
+      - "traefik.http.routers.powerclean-web.rule=Host(`powerclean.webappniederrhein.de`)"
+      - "traefik.http.routers.powerclean-web.entrypoints=web"
+      - "traefik.http.routers.powerclean-web.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+
+# Definiert, dass das Netzwerk "traefik-proxy" bereits existiert und nicht neu erstellt werden soll
+networks:
+  traefik-proxy:
+    external: true
