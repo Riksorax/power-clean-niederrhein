@@ -251,3 +251,8 @@ html {
     margin-bottom: 0;
     color: #713f12; /* Dunkelgelber Text */
 }
+
+#hero-title:focus {
+    outline: none;
+    box-shadow: none; /* For Bootstrap compatibility */
+}
