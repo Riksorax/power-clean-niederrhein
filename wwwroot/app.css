@@ -36,7 +36,7 @@ body {
 }
 
 .hero-section {
-    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('images/cleanTerrasseHeader.png');
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('images/cleanTerrasseHeader.webp');
     background-size: cover;
     background-position: center;
     color: #FAF9F6;
