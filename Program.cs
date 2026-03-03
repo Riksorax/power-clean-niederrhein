@@ -1,4 +1,5 @@
 using PowerCleanNiederrhein.Components;
+using PowerCleanNiederrhein.Options;
 using PowerCleanNiederrhein.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,8 +10,11 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddControllers();
 
-// Registrieren des Dummy-Services für das Kontaktformular.
-builder.Services.AddScoped<INotificationService, DummyNotificationService>();
+// Register Services.
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Register Options.
+builder.Services.Configure<SmtpSettingsOption>(builder.Configuration.GetSection(SmtpSettingsOption.Smtp));
 
 
 var app = builder.Build();

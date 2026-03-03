@@ -9,8 +9,7 @@
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
     <link rel="stylesheet" href="@Assets["app.css"]"/>
     @*<link rel="stylesheet" href="@Assets["PowerCleanNiederrhein.styles.css"]"/>*@
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <ImportMap/>
+<ImportMap/>
     <link rel="icon" type="image/png" href="favicon.png"/>
     <HeadOutlet/>
 </head>
@@ -18,6 +17,20 @@
 <body>
 <Routes/>
 <script src="_framework/blazor.web.js"></script>
+<script>
+    // Anker-Links (#leistungen, #kontakt etc.): smooth scrollen
+    document.addEventListener('click', (e) => {
+        const a = e.target.closest('a[href^="#"], a[href*="/#"]');
+        if (!a) return;
+        const hash = a.getAttribute('href').split('#')[1];
+        if (!hash) return;
+        const target = document.getElementById(hash);
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+</script>
 <script src="lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -7,11 +7,11 @@ services:
       - traefik-proxy # Verbindet sich mit dem externen Netzwerk von Traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.powerclean.rule=Host(`powerclean.webappniederrhein.de`)"
+      - "traefik.http.routers.powerclean.rule=Host(`powercleanniederrhein.de`)"
       - "traefik.http.routers.powerclean.entrypoints=websecure"
       - "traefik.http.routers.powerclean.tls.certresolver=letsencrypt"
       - "traefik.http.services.powerclean.loadbalancer.server.port=8080"
-      - "traefik.http.routers.powerclean-web.rule=Host(`powerclean.webappniederrhein.de`)"
+      - "traefik.http.routers.powerclean-web.rule=Host(`powercleanniederrhein.de`)"
       - "traefik.http.routers.powerclean-web.entrypoints=web"
       - "traefik.http.routers.powerclean-web.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
