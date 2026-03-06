@@ -147,7 +147,13 @@
         
         StateHasChanged();
         await Task.Delay(5000);
-        if (_submitMessage.StartsWith("Vielen Dank") || _submitMessage.StartsWith("Fehler")) // Nur ausblenden, wenn es die ursprüngliche Nachricht ist
+        if (_submitMessage.StartsWith("Vielen Dank")) // Nur ausblenden, wenn es die ursprüngliche Nachricht ist
+        {
+            _submitSuccess = true;
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+        else if (_submitMessage.StartsWith("Fehler"))
         {
             _submitSuccess = false;
             _isSubmitting = false;
