@@ -48,10 +48,26 @@ jobs:
             git pull origin master
 
             # Das neueste Docker-Image herunterladen
-            sudo docker compose --file docker-compose.yaml pull
+            sudo sh -c '
+              export SMTP_HOST="${{ secrets.SMTP_HOST }}";
+              export SMTP_PORT="${{ secrets.SMTP_PORT }}";
+              export SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}";
+              export SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}";
+              export SMTP_FROM_EMAIL="${{ secrets.SMTP_FROM_EMAIL }}";
+              export SMTP_TO_EMAIL="${{ secrets.SMTP_TO_EMAIL }}";
+              docker compose --file docker-compose.yaml pull
+            '
 
             # Die Anwendung mit der neuen Konfiguration und dem neuen Image starten/aktualisieren
-            sudo docker compose --file docker-compose.yaml up -d
+            sudo sh -c '
+              export SMTP_HOST="${{ secrets.SMTP_HOST }}";
+              export SMTP_PORT="${{ secrets.SMTP_PORT }}";
+              export SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}";
+              export SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}";
+              export SMTP_FROM_EMAIL="${{ secrets.SMTP_FROM_EMAIL }}";
+              export SMTP_TO_EMAIL="${{ secrets.SMTP_TO_EMAIL }}";
+              docker compose --file docker-compose.yaml up -d
+            '
 
             # Alte, ungenutzte Docker-Images aufräumen
             sudo docker image prune -af

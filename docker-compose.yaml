@@ -2,6 +2,14 @@ services:
   powerclean: # Eindeutiger Service-Name für dieses Projekt
     image: riksorax/power-clean-niederrhein:latest # Das Image, das von GitHub Actions gebaut wird
     container_name: powerclean # Eindeutiger Container-Name
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - SmtpSettings__Host=${SMTP_HOST}
+      - SmtpSettings__Port=${SMTP_PORT}
+      - SmtpSettings__Username=${SMTP_USERNAME}
+      - SmtpSettings__Password=${SMTP_PASSWORD}
+      - SmtpSettings__FromEmail=${SMTP_FROM_EMAIL}
+      - SmtpSettings__ToEmail=${SMTP_TO_EMAIL}
     restart: unless-stopped
     networks:
       - traefik-proxy # Verbindet sich mit dem externen Netzwerk von Traefik
