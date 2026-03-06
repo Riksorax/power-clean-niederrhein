@@ -14,7 +14,7 @@ public class EmailService(IOptions<SmtpSettingsOption> smtpSettingsOption, IWebH
         var smtpPortString = smtpSettingsOption.Value.Port;
         if (!int.TryParse(smtpPortString, out var smtpPort))
         {
-            smtpPort = 587; // Standardwert, wenn der String nicht geparst werden kann
+            smtpPort = 587;
         }
         var smtpUser =smtpSettingsOption.Value.Username;
         var smtpPass = smtpSettingsOption.Value.Password;
@@ -35,7 +35,6 @@ public class EmailService(IOptions<SmtpSettingsOption> smtpSettingsOption, IWebH
         
         var emailBody = await File.ReadAllTextAsync(templatePath);
 
-        // Platzhalter ersetzen
         emailBody = emailBody.Replace("{{Name}}", contact.Name);
         emailBody = emailBody.Replace("{{Email}}", contact.Email);
         emailBody = emailBody.Replace("{{Nachricht}}", contact.Message); // Achten Sie darauf, dass der Platzhalter genau so im HTML ist

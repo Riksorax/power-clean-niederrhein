@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neue Kontaktformular-Nachricht</title>
+    <style>
+        /* Grundlegende Stile für bessere Kompatibilität */
+        body {
+            font-family: 'Inter', sans-serif; /* Inter Font für moderne Optik, passt gut zum Webdesign */
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4; /* Heller Hintergrund */
+            color: #333333;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td {
+            padding: 10px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px; /* Abgerundete Ecken */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* Stellt sicher, dass der Schatten korrekt angezeigt wird */
+        }
+        .header {
+            background-color: #34495e; /* Dunkler Blau-Grau-Ton, passend zur Website */
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            background-color: #34495e; /* Dunkler Blau-Grau-Ton, passend zur Website */
+            color: #ffffff; /* Weiße Schrift im Footer */
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        .label {
+            font-weight: bold;
+            color: #555555;
+            vertical-align: top; /* Text oben ausrichten */
+            padding-right: 15px; /* Abstand zum Wert */
+            width: 120px; /* Feste Breite für Labels */
+        }
+        .value {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 5px; /* Abgerundete Ecken für Wertefelder */
+            word-wrap: break-word; /* Lange Wörter umbrechen */
+        }
+        .button {
+            display: inline-block;
+            background-color: #4A90E2; /* Ein passendes Blau für den Button */
+            color: #ffffff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        /* Responsive Anpassungen */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                margin: 0;
+                border-radius: 0;
+            }
+            .header, .footer {
+                border-radius: 0;
+            }
+            .content {
+                padding: 15px;
+            }
+            .label {
+                width: auto; /* Auf Mobilgeräten flexible Breite */
+                display: block; /* Labels über Werten anzeigen */
+                margin-bottom: 5px;
+            }
+            .value {
+                width: 100%;
+                box-sizing: border-box; /* Padding in die Breite einbeziehen */
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>Neue Nachricht von Ihrem Kontaktformular</h2>
+    </div>
+    <div class="content">
+        <p>Sie haben eine neue Nachricht über Ihr Kontaktformular erhalten. Hier sind die Details:</p>
+
+        <table>
+            <tr>
+                <td class="label">Name:</td>
+                <td class="value">{{Name}}</td>
+            </tr>
+            <tr>
+                <td class="label">E-Mail:</td>
+                <td class="value">{{Email}}</td>
+            </tr>
+            <tr>
+                <td class="label">Nachricht:</td>
+                <td class="value">{{Nachricht}}</td>
+            </tr>
+        </table>
+
+        <p style="margin-top: 25px;">
+            Vielen Dank für die Nutzung Ihres Kontaktformulars.
+        </p>
+        <!-- Optional: Button, z.B. zum Antworten oder zur Admin-Oberfläche -->
+        <!-- <a href="mailto:{{Email}}" class="button">Direkt antworten</a> -->
+    </div>
+    <div class="footer">
+        Dies ist eine automatisch generierte E-Mail. Bitte antworten Sie nicht direkt auf diese E-Mail, es sei denn, der Absender ist eine gültige E-Mail-Adresse.
+    </div>
+</div>
+</body>
+</html>
