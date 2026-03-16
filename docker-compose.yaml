@@ -15,14 +15,29 @@ services:
       - traefik-proxy # Verbindet sich mit dem externen Netzwerk von Traefik
     labels:
       - "traefik.enable=true"
+
+      # HTTPS - Hauptdomain
       - "traefik.http.routers.powerclean.rule=Host(`powercleanniederrhein.de`)"
       - "traefik.http.routers.powerclean.entrypoints=websecure"
       - "traefik.http.routers.powerclean.tls.certresolver=letsencrypt"
       - "traefik.http.services.powerclean.loadbalancer.server.port=8080"
-      - "traefik.http.routers.powerclean-web.rule=Host(`powercleanniederrhein.de`)"
+
+      # HTTPS - www → non-www Redirect
+      - "traefik.http.routers.powerclean-www.rule=Host(`www.powercleanniederrhein.de`)"
+      - "traefik.http.routers.powerclean-www.entrypoints=websecure"
+      - "traefik.http.routers.powerclean-www.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.powerclean-www.middlewares=redirect-www"
+
+      # HTTP - beides auf HTTPS umleiten
+      - "traefik.http.routers.powerclean-web.rule=Host(`powercleanniederrhein.de`) || Host(`www.powercleanniederrhein.de`)"
       - "traefik.http.routers.powerclean-web.entrypoints=web"
       - "traefik.http.routers.powerclean-web.middlewares=https-redirect"
+
+      # Middlewares
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-www.redirectregex.regex=^https://www\\.(.*)"
+      - "traefik.http.middlewares.redirect-www.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.redirect-www.redirectregex.permanent=true"
 
 # Definiert, dass das Netzwerk "traefik-proxy" bereits existiert und nicht neu erstellt werden soll
 networks:
