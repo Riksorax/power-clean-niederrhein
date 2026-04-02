@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /Error
+
+Sitemap: https://powercleanniederrhein.de/sitemap.xml
