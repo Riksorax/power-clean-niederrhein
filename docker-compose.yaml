@@ -22,6 +22,12 @@ services:
       - "traefik.http.routers.powerclean.tls.certresolver=letsencrypt"
       - "traefik.http.services.powerclean.loadbalancer.server.port=8080"
 
+      # Sticky Sessions für Blazor Server SignalR (WebSocket)
+      - "traefik.http.services.powerclean.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.powerclean.loadbalancer.sticky.cookie.name=powerclean_sticky"
+      - "traefik.http.services.powerclean.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.powerclean.loadbalancer.sticky.cookie.httpOnly=true"
+
       # HTTPS - www → non-www Redirect
       - "traefik.http.routers.powerclean-www.rule=Host(`www.powercleanniederrhein.de`)"
       - "traefik.http.routers.powerclean-www.entrypoints=websecure"
