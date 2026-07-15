@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "title": "Terrassenreinigung",
+    "description": "Wir befreien Ihre Terrasse von Moos, Algen und Schmutz – für einladende Stunden im Freien.",
+    "imageUrl": "/images/TerraceCleaning.webp",
+    "altText": "Terrassenreinigung",
+    "sort": 1
+  },
+  {
+    "id": "2",
+    "title": "Gehwegreinigung",
+    "description": "Sichere und saubere Wege. Wir reinigen Pflastersteine, Betonflächen und mehr.",
+    "imageUrl": "/images/SidewalkCleaning.webp",
+    "altText": "Gehwegreinigung",
+    "sort": 2
+  },
+  {
+    "id": "3",
+    "title": "Balkonreinigung",
+    "description": "Genießen Sie Ihren Balkon wieder in voller Pracht. Wir entfernen Schmutz und Beläge schonend.",
+    "imageUrl": "/images/BalconyCleaning.webp",
+    "altText": "Balkonreinigung",
+    "sort": 3
+  },
+  {
+    "id": "4",
+    "title": "Auffahrtreinigung",
+    "description": "Ein sauberer Empfang: Wir reinigen Ihre Auffahrt von Moos und Witterungseinflüssen.",
+    "imageUrl": "/images/DrivewayCleaning.webp",
+    "altText": "Auffahrtreinigung",
+    "sort": 4
+  },
+  {
+    "id": "5",
+    "title": "Parkplatzreinigung",
+    "description": "Für einen gepflegten ersten Eindruck: Professionelle Reinigung von Parkflächen für Privat und Gewerbe.",
+    "imageUrl": "/images/ParkingLotCleaning.webp",
+    "altText": "Parkplatzreinigung",
+    "sort": 5
+  },
+  {
+    "id": "6",
+    "title": "Winterdienst",
+    "description": "Sicher durch den Winter: Wir übernehmen zuverlässig das Schneeräumen und Streuen auf Ihren Wegen und Flächen.",
+    "imageUrl": "/images/WinterService.webp",
+    "altText": "Winterdienst",
+    "sort": 6
+  }
+]

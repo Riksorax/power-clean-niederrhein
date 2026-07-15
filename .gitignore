@@ -360,3 +360,15 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # End of https://www.toptal.com/developers/gitignore/api/aspnetcore,dotnetcore,rider
+
+# Next.js / Node
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# Secrets — nie committen
+.env
+.env.local
+.env.*.local
+*.env.local
+appsettings.*.local.json

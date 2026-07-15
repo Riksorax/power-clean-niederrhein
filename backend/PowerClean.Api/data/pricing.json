@@ -1,0 +1,122 @@
+[
+  {
+    "id": "1",
+    "service": "Terrassenreinigung",
+    "sort": 1,
+    "tiers": [
+      {
+        "range": "bis 30 m²",
+        "price": "60,00 € pauschal"
+      },
+      {
+        "range": "ab 31 m²",
+        "price": "2,50 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "service": "Gehwegreinigung",
+    "sort": 2,
+    "tiers": [
+      {
+        "range": "bis 30 m²",
+        "price": "55,00 € pauschal"
+      },
+      {
+        "range": "ab 31 m²",
+        "price": "2,50 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "service": "Balkonreinigung",
+    "sort": 3,
+    "tiers": [
+      {
+        "range": "bis 10 m²",
+        "price": "40,00 € pauschal"
+      },
+      {
+        "range": "ab 11 m²",
+        "price": "4,00 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "service": "Auffahrt Reinigung",
+    "sort": 4,
+    "tiers": [
+      {
+        "range": "bis 30 m²",
+        "price": "60,00 € pauschal"
+      },
+      {
+        "range": "ab 31 m²",
+        "price": "2,50 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "service": "Parkplatz Reinigung",
+    "sort": 5,
+    "tiers": [
+      {
+        "range": "bis 50 m²",
+        "price": "80,00 € pauschal"
+      },
+      {
+        "range": "ab 51 m²",
+        "price": "2,00 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "service": "Rasen mähen",
+    "sort": 6,
+    "tiers": [
+      {
+        "range": "bis 50 m²",
+        "price": "25,00 € pauschal"
+      },
+      {
+        "range": "ab 51 m²",
+        "price": "0,10 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "7",
+    "service": "Unkrautentfernung",
+    "sort": 7,
+    "tiers": [
+      {
+        "range": "bis 20 m²",
+        "price": "30,00 € pauschal"
+      },
+      {
+        "range": "ab 21 m²",
+        "price": "1,50 € / m²"
+      }
+    ]
+  },
+  {
+    "id": "8",
+    "service": "Anfahrt",
+    "sort": 8,
+    "tiers": [
+      {
+        "range": "bis 15 km",
+        "price": "inklusive"
+      },
+      {
+        "range": "ab 15 km",
+        "price": "20,00 € pauschal"
+      }
+    ]
+  }
+]

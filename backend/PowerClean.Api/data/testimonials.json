@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1",
+    "title": "Steinterrasse wie neu",
+    "text": "\"Unsere Auffahrt war voller Moos. Power Clean Niederrhein hat sie wieder strahlend sauber gemacht!\" - Familie M.",
+    "imageUrl": "/images/StoneTerraceBeforeAfter.webp",
+    "altText": "Gereinigte Steine",
+    "sort": 1
+  },
+  {
+    "id": "2",
+    "title": "Holzterrasse erstrahlt",
+    "text": "\"Ich bin begeistert, wie toll unsere Holzterrasse nach der Reinigung aussieht. Absolut empfehlenswert!\" - Herr K.",
+    "imageUrl": "/images/WoodenTerraceBeforeAfter.webp",
+    "altText": "Gereinigte Holzterrasse",
+    "sort": 2
+  },
+  {
+    "id": "3",
+    "title": "Winterdienst Top!",
+    "text": "\"Auch bei Schnee und Eis konnten wir uns auf Power Clean verlassen. Super Service!\" - Firma S.",
+    "imageUrl": "/images/WinterServiceBeforeAfter.webp",
+    "altText": "Schneefreier Gehweg",
+    "sort": 3
+  }
+]

@@ -1,0 +1,87 @@
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+
+  --color-moss-green: #556b2f;
+  --color-moss-green-dark: #455725;
+  --color-beige-sand: #f5e6ca;
+  --color-beige-sand-dark: #e0d5b9;
+  --color-off-white: #faf9f6;
+  --color-dark-gray: #333333;
+  --color-light-gray: #666666;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #faf9f6;
+  color: #333333;
+}
+
+/* Legal content pages */
+.content-section h1,
+.content-section h2,
+.content-section h3,
+.content-section h4 {
+  color: #556b2f;
+  font-weight: 600;
+}
+.content-section h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  border: none;
+}
+.content-section h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+}
+.content-section p,
+.content-section ul,
+.content-section ol {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  color: #333333;
+}
+.content-section ul,
+.content-section ol {
+  padding-left: 1.5rem;
+}
+.content-section ul li,
+.content-section ol li {
+  margin-bottom: 0.35rem;
+}
+.content-section a {
+  color: #556b2f;
+  text-decoration: underline;
+}
+.content-section a:hover {
+  color: #455725;
+}
