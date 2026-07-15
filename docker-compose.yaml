@@ -45,6 +45,60 @@ services:
       - "traefik.http.middlewares.redirect-www.redirectregex.replacement=https://$${1}"
       - "traefik.http.middlewares.redirect-www.redirectregex.permanent=true"
 
+  # Next.js-Frontend + .NET-API (Cutover-Plan Phase A/B, siehe docs/CUTOVER.md) — laufen
+  # parallel zu "powerclean" (Blazor), bekommen aber noch KEINEN öffentlichen Traffic
+  # (traefik.enable=false). Erst der Wechsel auf "true" + Prioritäten in Phase C schaltet um.
+  frontend:
+    image: ${DOCKERHUB_USERNAME:-riksorax}/power-clean-frontend:latest
+    container_name: power-clean-frontend
+    environment:
+      - API_URL=http://api:8080
+      - REVALIDATE_SECRET=${REVALIDATE_SECRET}
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=false"
+      - "traefik.http.routers.frontend.rule=Host(`powercleanniederrhein.de`) || Host(`www.powercleanniederrhein.de`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.priority=20"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+  api:
+    image: ${DOCKERHUB_USERNAME:-riksorax}/power-clean-api:latest
+    container_name: power-clean-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - AllowedOrigins=https://powercleanniederrhein.de
+      - SmtpSettings__Host=${SMTP_HOST}
+      - SmtpSettings__Port=${SMTP_PORT}
+      - SmtpSettings__Username=${SMTP_USERNAME}
+      - SmtpSettings__Password=${SMTP_PASSWORD}
+      - SmtpSettings__FromEmail=${SMTP_FROM_EMAIL}
+      - SmtpSettings__ToEmail=${SMTP_TO_EMAIL}
+      - UniversalCms__BaseUrl=https://cms.webappniederrhein.de
+      - UniversalCms__ApiKey=${UNIVERSALCMS_API_KEY}
+      - UniversalCms__ProjectSlug=powercleanniederrhein
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=false"
+      - "traefik.http.routers.api.rule=Host(`powercleanniederrhein.de`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.priority=30"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 # Definiert, dass das Netzwerk "traefik-proxy" bereits existiert und nicht neu erstellt werden soll
 networks:
   traefik-proxy:

@@ -5,7 +5,7 @@ on:
     branches: [ master ]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -17,12 +17,36 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/PowerClean.Api
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/power-clean-api:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/power-clean-frontend:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://powercleanniederrhein.de
+
+      # Weiterhin das alte Blazor-Image bauen/pushen, solange es laut Cutover-Plan noch aktiv ist
+      - name: Build and push legacy Blazor image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/power-clean-niederrhein:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
@@ -49,24 +73,30 @@ jobs:
 
             # Das neueste Docker-Image herunterladen
             sudo sh -c '
+              export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}";
               export SMTP_HOST="${{ secrets.SMTP_HOST }}";
               export SMTP_PORT="${{ secrets.SMTP_PORT }}";
               export SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}";
               export SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}";
               export SMTP_FROM_EMAIL="${{ secrets.SMTP_FROM_EMAIL }}";
               export SMTP_TO_EMAIL="${{ secrets.SMTP_TO_EMAIL }}";
+              export UNIVERSALCMS_API_KEY="${{ secrets.UNIVERSALCMS_API_KEY }}";
+              export REVALIDATE_SECRET="${{ secrets.REVALIDATE_SECRET }}";
               docker compose --file docker-compose.yaml pull
             '
 
             # Die Anwendung mit der neuen Konfiguration und dem neuen Image starten/aktualisieren
             sudo sh -c '
+              export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}";
               export SMTP_HOST="${{ secrets.SMTP_HOST }}";
               export SMTP_PORT="${{ secrets.SMTP_PORT }}";
               export SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}";
               export SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}";
               export SMTP_FROM_EMAIL="${{ secrets.SMTP_FROM_EMAIL }}";
               export SMTP_TO_EMAIL="${{ secrets.SMTP_TO_EMAIL }}";
-              docker compose --file docker-compose.yaml up -d
+              export UNIVERSALCMS_API_KEY="${{ secrets.UNIVERSALCMS_API_KEY }}";
+              export REVALIDATE_SECRET="${{ secrets.REVALIDATE_SECRET }}";
+              docker compose --file docker-compose.yaml up -d --remove-orphans
             '
 
             # Alte, ungenutzte Docker-Images aufräumen

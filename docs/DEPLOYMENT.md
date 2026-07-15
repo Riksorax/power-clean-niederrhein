@@ -15,9 +15,14 @@ universal-cms (fremdes, bereits laufendes Projekt des Betreibers)
 Kein eigener CMS-Container, keine eigene Datenbank, keine eigene Firebase-Instanz für dieses
 Projekt nötig — siehe `docs/CMS.md`/`docs/ARCHITECTURE.md`.
 
+**Aktueller Übergangszustand:** Das echte `docker-compose.yaml` im Repo enthält aktuell noch
+zusätzlich den alten Blazor-Service `powerclean` (läuft mit `traefik.enable=true`, bekommt
+weiterhin 100% Traffic) neben `frontend`/`api` (`traefik.enable=false`, noch kein öffentlicher
+Traffic) — siehe `docs/CUTOVER.md` für den Phasenplan bis zum eigentlichen Umschalten.
+
 ---
 
-## docker-compose.yaml
+## docker-compose.yaml (Ziel-Zustand nach Cutover)
 
 ```yaml
 services:
