@@ -131,7 +131,7 @@ Next.js (app/preview/[collectionSlug]/[entryId]/page.tsx)
 - **App Router**: Layouts, Server Components, parallel Data Fetching
 - **ISR** (Incremental Static Regeneration): Seiten nur bei CMS-Änderung neu gebaut
 - **Image Optimization**: `next/image` optimiert WebP-Bilder automatisch
-- **API Routes**: Webhook-Endpunkt für ISR-Revalidierung (`/api/revalidate`)
+- **API Routes**: Webhook-Endpunkt für ISR-Revalidierung (`/revalidate`)
 
 ### Kontaktformular — E-Mail bleibt unverändert
 

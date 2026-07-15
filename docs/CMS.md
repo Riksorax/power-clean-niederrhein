@@ -95,10 +95,12 @@ https://powercleanniederrhein.de/preview/{collectionSlug}/{entryId}?token={token
 
 ### ISR-Revalidierung bei Veröffentlichung
 
-`app/api/revalidate/route.ts` existiert bereits (ursprünglich für Directus Flows gedacht) und
-erwartet `POST` mit Header `x-revalidate-secret` und Body `{ "tag": "services" }`. Sinnvoller Weg,
+`app/revalidate/route.ts` existiert bereits (ursprünglich für Directus Flows gedacht, liegt
+bewusst **nicht** unter `/api/` — Traefik leitet `/api/*` komplett ans .NET-Backend, eine
+Next.js-eigene Route dort wäre unerreichbar) und erwartet `POST` mit Header
+`x-revalidate-secret` und Body `{ "tag": "services" }`. Sinnvoller Weg,
 das an universal-cms anzubinden: **Webhook** im CMS-Projekt anlegen (Tab „Webhooks", Event
-`entry.published`), Ziel-URL `https://powercleanniederrhein.de/api/revalidate`. universal-cms
+`entry.published`), Ziel-URL `https://powercleanniederrhein.de/revalidate`. universal-cms
 signiert den Payload per `X-UniversalCms-Signature` (HMAC-SHA256, Secret wird beim Anlegen des
 Webhooks angezeigt) — `route.ts` müsste dafür von der Secret-Header-Prüfung auf eine
 Signaturprüfung umgestellt werden (noch offen, aktuell nicht umgesetzt).

@@ -139,7 +139,7 @@ export async function fetchApi<T>(
 ## ISR Revalidierung bei CMS-Änderung
 
 ```typescript
-// app/api/revalidate/route.ts
+// app/revalidate/route.ts
 import { revalidateTag } from "next/cache";
 
 export async function POST(request: NextRequest) {
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
 
 Ein Webhook im universal-cms-Projekt (Event `entry.published`) soll künftig diesen Endpunkt aufrufen:
 ```
-POST /api/revalidate
+POST /revalidate
 Header: x-revalidate-secret: <REVALIDATE_SECRET>
 Body:   { "tag": "services" }   // oder "all" für alles
 ```
