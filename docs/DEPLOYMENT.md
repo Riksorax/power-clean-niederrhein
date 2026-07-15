@@ -4,21 +4,20 @@
 
 ```
 Hetzner VPS
-├── Traefik             → TLS, Routing, IP-Whitelist
+├── Traefik             → TLS, Routing
 ├── frontend            → Next.js (Node.js Standalone)
-├── api                 → .NET Minimal API
-├── cms                 → Directus Admin UI  [Phase 4]
-└── postgres            → PostgreSQL (internes Netz)  [Phase 4]
+└── api                 → .NET Minimal API
 
-Firebase (Google Cloud, europe-west3)
-├── Authentication      → Admin-Login
-├── Firestore           → Kontaktanfragen
-└── Storage             → Bilder
+universal-cms (fremdes, bereits laufendes Projekt des Betreibers)
+└── cms.webappniederrhein.de → Admin-Login, Content-Verwaltung, Bild-Upload
 ```
+
+Kein eigener CMS-Container, keine eigene Datenbank, keine eigene Firebase-Instanz für dieses
+Projekt nötig — siehe `docs/CMS.md`/`docs/ARCHITECTURE.md`.
 
 ---
 
-## docker-compose.yaml (Phase 1–3)
+## docker-compose.yaml
 
 ```yaml
 services:
@@ -28,15 +27,6 @@ services:
     environment:
       - API_URL=http://api:8080
       - NEXT_PUBLIC_API_URL=https://powercleanniederrhein.de
-      - NEXT_PUBLIC_FIREBASE_API_KEY=${FIREBASE_API_KEY}
-      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN}
-      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
-      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET}
-      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID}
-      - NEXT_PUBLIC_FIREBASE_APP_ID=${FIREBASE_APP_ID}
-      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
-      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
-      - COOKIE_SECRET=${COOKIE_SECRET}
       - REVALIDATE_SECRET=${REVALIDATE_SECRET}
     networks:
       - traefik-proxy
@@ -59,8 +49,9 @@ services:
       - SmtpSettings__FromEmail=${SMTP_FROM_EMAIL}
       - SmtpSettings__ToEmail=${SMTP_TO_EMAIL}
       - AllowedOrigins=https://powercleanniederrhein.de
-      - Firebase__ProjectId=${FIREBASE_PROJECT_ID}
-      - Firebase__ServiceAccountJson=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - UniversalCms__BaseUrl=https://cms.webappniederrhein.de
+      - UniversalCms__ApiKey=${UNIVERSALCMS_API_KEY}
+      - UniversalCms__ProjectSlug=powercleanniederrhein
       - ASPNETCORE_ENVIRONMENT=Production
     networks:
       - traefik-proxy
@@ -83,68 +74,6 @@ networks:
     external: true
   internal:
     internal: true
-```
-
----
-
-## docker-compose.yaml (Phase 4 — mit Directus + PostgreSQL)
-
-```yaml
-# Ergänzungen zu Phase 1-3:
-  cms:
-    image: directus/directus:11
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - directus_uploads:/directus/uploads
-    environment:
-      SECRET:           "${DIRECTUS_SECRET}"
-      DB_CLIENT:        "pg"
-      DB_HOST:          "postgres"
-      DB_DATABASE:      "directus"
-      DB_USER:          "${POSTGRES_USER}"
-      DB_PASSWORD:      "${POSTGRES_PASSWORD}"
-      ADMIN_EMAIL:      "${DIRECTUS_ADMIN_EMAIL}"
-      ADMIN_PASSWORD:   "${DIRECTUS_ADMIN_PASSWORD}"
-      PUBLIC_URL:       "https://cms.powercleanniederrhein.de"
-      CORS_ENABLED:     "true"
-      CORS_ORIGIN:      "https://powercleanniederrhein.de"
-      REVALIDATE_SECRET: "${REVALIDATE_SECRET}"
-      NEXTJS_URL:       "http://frontend:3000"
-    networks:
-      - traefik-proxy
-      - internal
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.cms.rule=Host(`cms.powercleanniederrhein.de`)"
-      - "traefik.http.routers.cms.entrypoints=websecure"
-      - "traefik.http.routers.cms.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.cms.middlewares=cms-whitelist"
-      - "traefik.http.middlewares.cms-whitelist.ipallowlist.sourcerange=${ADMIN_IP_WHITELIST}"
-      - "traefik.http.services.cms.loadbalancer.server.port=8055"
-
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB:       "directus"
-      POSTGRES_USER:     "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-    networks:
-      - internal          # Kein Traefik-Zugriff!
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
-  directus_uploads:
 ```
 
 ---
@@ -273,27 +202,12 @@ jobs:
 | `SERVER_SSH_KEY` | Privater SSH-Schlüssel |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | SMTP |
 | `SMTP_FROM_EMAIL` / `SMTP_TO_EMAIL` | E-Mail-Adressen |
-| `FIREBASE_API_KEY` | Firebase Web API Key |
-| `FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain |
-| `FIREBASE_PROJECT_ID` | Firebase Projekt-ID |
-| `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket |
-| `FIREBASE_MESSAGING_SENDER_ID` | FCM Sender ID |
-| `FIREBASE_APP_ID` | Firebase App ID |
-| `FIREBASE_CLIENT_EMAIL` | Service Account E-Mail |
-| `FIREBASE_PRIVATE_KEY` | Service Account Private Key |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Vollständiges Service Account JSON |
-| `COOKIE_SECRET` | Min. 32 Zeichen, zufällig |
 | `REVALIDATE_SECRET` | ISR Revalidierungs-Secret |
-| `DIRECTUS_SECRET` | Directus App-Secret [Phase 4] |
-| `DIRECTUS_ADMIN_EMAIL` | Directus Admin E-Mail [Phase 4] |
-| `DIRECTUS_ADMIN_PASSWORD` | Directus Admin Passwort [Phase 4] |
-| `POSTGRES_USER` | PostgreSQL Benutzer [Phase 4] |
-| `POSTGRES_PASSWORD` | PostgreSQL Passwort [Phase 4] |
-| `ADMIN_IP_WHITELIST` | IP-Whitelist für CMS [Phase 4] |
+| `UNIVERSALCMS_API_KEY` | API-Key des Projekts „powercleanniederrhein" im universal-cms |
 
 ---
 
-## Staging-Umgebung (optional, empfohlen ab Phase 3)
+## Staging-Umgebung (optional)
 
 Für Änderungen die vor dem Produktions-Go-Live getestet werden sollen,
 kann ein zweiter Compose-Stack auf demselben Server laufen:
@@ -320,8 +234,9 @@ docker compose -f compose-staging.yaml up -d
 echo $(htpasswd -nb user passwort) | sed -e s/\\$/\\$\\$/g
 ```
 
-Staging nutzt denselben Firebase-Account, aber **separate Collections** in Directus
-(z.B. Prefix `staging_services`), damit Produktionsdaten unberührt bleiben.
+Staging sollte auf ein **separates Projekt** im universal-cms zeigen (eigener
+`UniversalCms__ProjectSlug` + eigener API-Key), damit Test-Inhalte nicht mit den
+Produktionsdaten kollidieren.
 
 ---
 
@@ -340,7 +255,6 @@ services:
     environment:
       - API_URL=http://localhost:5000
       - NEXT_PUBLIC_API_URL=http://localhost:5000
-      # Firebase: lokale .env.local Datei verwenden
     volumes:
       - ./frontend/src:/app/src     # Hot Reload
     command: npm run dev
@@ -377,21 +291,10 @@ docker compose up -d api
 
 ---
 
-## Backup-Strategie (Phase 4)
+## Backup-Strategie
 
-### PostgreSQL (Directus-Daten)
-
-```bash
-# Täglicher Backup-Cronjob auf dem Server
-0 3 * * * docker exec postgres pg_dump -U $POSTGRES_USER directus | gzip > /backups/directus-$(date +%Y%m%d).sql.gz
-
-# Alte Backups löschen (älter als 30 Tage)
-find /backups -name "directus-*.sql.gz" -mtime +30 -delete
-```
-
-### Firebase (Firestore)
-
-Firebase Console → Firestore → Export to Google Cloud Storage (täglich, automatisch konfigurierbar).
+Content-Backups (Einträge, Bilder) sind Sache der universal-cms-Instanz selbst (Firestore +
+Firebase Storage, eigener Backup-Plan) — dieses Repo hält selbst keine Redaktionsdaten mehr vor.
 
 ---
 

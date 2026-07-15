@@ -1,9 +1,19 @@
-# Frontend — Next.js 15 + TypeScript
+# Frontend — Next.js 16 + TypeScript
+
+## Status
+
+| Phase | Inhalt | Status |
+|-------|--------|--------|
+| **2** | Next.js Frontend (Ablösung Blazor, SSR/SSG) | ✅ **Implementiert** |
+| **3** | universal-cms-Integration (Content, Live-Vorschau) | ✅ **Implementiert** — Collections/Einträge im CMS-Admin folgen |
+| **4** | ISR-Revalidierung per CMS-Webhook | ⏳ Geplant |
+
+---
 
 ## Ziel
 
-- Öffentliche Marketing-Website mit SSR/SSG (SEO-optimiert)
-- Admin-Bereich `/admin` für CMS-Verwaltung (Firebase Auth geschützt)
+- Öffentliche Marketing-Website mit SSR/ISR (SEO-optimiert)
+- Admin-Bereich `/admin` für CMS-Verwaltung (Firebase Auth geschützt) — Phase 3
 - Ablösung der bestehenden Blazor Server App
 
 ---
@@ -12,89 +22,59 @@
 
 | Paket | Version | Zweck |
 |-------|---------|-------|
-| `next` | 15 (App Router) | Framework |
-| `react` | 19 | UI |
+| `next` | **16.2.3** (App Router) | Framework |
+| `react` | **19.2.4** | UI |
 | `typescript` | 5.x | Typsicherheit |
-| `tailwindcss` | 4.x | Styling |
-| `firebase` | 11.x | Auth + Firestore SDK (Client) |
+| `tailwindcss` | **4.x** (kein `tailwind.config.ts` nötig) | Styling |
+| `firebase` | **12.x** | Auth + Storage SDK (Client) |
 | `@tanstack/react-query` | 5.x | API-Caching (Client Components) |
-| `react-hook-form` + `zod` | 7.x / 3.x | Formulare + Validierung |
-| `next-firebase-auth-edge` | — | Firebase Auth in Next.js Middleware |
-| `sharp` | — | next/image Optimierung |
+| `react-hook-form` | 7.x | Formular-State |
+| `@hookform/resolvers` | 5.x | Zod-Integration für react-hook-form |
+| `zod` | **4.x** | Schema-Validierung |
+| `next-firebase-auth-edge` | 1.x | Firebase Auth in Next.js Middleware |
 
 ---
 
-## Projektstruktur
+## Projektstruktur (aktueller Stand)
 
 ```
 frontend/
 ├── app/                              ← Next.js App Router
-│   ├── layout.tsx                    ← Root Layout (Metadata, Fonts)
-│   ├── page.tsx                      ← Startseite (SSG)
-│   ├── datenschutz/page.tsx
-│   ├── agb/page.tsx
-│   ├── impressum/page.tsx
-│   ├── admin/
-│   │   ├── layout.tsx                ← Admin Layout (Auth-Guard)
-│   │   ├── page.tsx                  ← Admin Dashboard
-│   │   ├── login/page.tsx            ← Firebase Login-Seite
-│   │   ├── services/page.tsx         ← Leistungen verwalten
-│   │   ├── pricing/page.tsx          ← Preise verwalten
-│   │   ├── testimonials/page.tsx     ← Testimonials verwalten
-│   │   ├── pages/page.tsx            ← Statische Seiten (WYSIWYG)
-│   │   └── contacts/page.tsx         ← Hinweis: Kontaktanfragen kommen per E-Mail (kein Admin-UI nötig)
-│   └── api/
-│       └── revalidate/route.ts       ← Webhook: ISR-Revalidierung bei CMS-Änderung
-├── components/
-│   ├── layout/
-│   │   ├── NavMenu.tsx
-│   │   ├── Footer.tsx
-│   │   └── ScrollToTop.tsx
+│   ├── layout.tsx                    ← Root Layout (lang="de", NavMenu + Footer)
+│   ├── page.tsx                      ← Startseite (ISR, 10 Min)
+│   ├── globals.css                   ← Inter Font, Tailwind v4 @theme, Brand-Farben
+│   ├── datenschutz/page.tsx          ← Statische Seite (noindex)
+│   ├── agb/page.tsx                  ← Statische Seite (noindex)
+│   ├── impressum/page.tsx            ← Statische Seite (noindex)
+│   ├── components/
+│   │   ├── NavMenu.tsx               ← Client Component (Hamburger-Toggle)
+│   │   └── Footer.tsx                ← Server Component
 │   ├── sections/                     ← Alle Landing-Page-Sektionen
-│   │   ├── HeroSection.tsx
-│   │   ├── LeistungenSection.tsx
-│   │   ├── PreiseSection.tsx
-│   │   ├── ZusatzleistungenSection.tsx
-│   │   ├── ErfolgeSection.tsx
-│   │   └── KontaktSection.tsx
-│   ├── admin/                        ← Admin UI Komponenten
-│   │   ├── AdminSidebar.tsx
-│   │   ├── ServiceForm.tsx
-│   │   ├── PricingForm.tsx
-│   │   ├── ImageUpload.tsx           ← Firebase Storage Upload
-│   │   └── ImageUpload.tsx           ← Firebase Storage Upload
-│   └── ui/
-│       ├── ServiceCard.tsx
-│       ├── PricingCard.tsx
-│       ├── TestimonialCard.tsx
-│       └── LoadingSkeleton.tsx
+│   │   ├── HeroSection.tsx           ← Server Component
+│   │   ├── LeistungenSection.tsx     ← Server Component (props: Service[])
+│   │   ├── PreiseSection.tsx         ← Server Component (statisch)
+│   │   ├── ZusatzleistungenSection.tsx ← Server Component (props: Pricing[])
+│   │   ├── ErfolgeSection.tsx        ← Server Component (props: Testimonial[])
+│   │   └── KontaktSection.tsx        ← Client Component (react-hook-form + zod)
+│   ├── admin/                        ← [Phase 3] Firebase Auth geschützt
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── login/page.tsx
+│   └── api/
+│       └── revalidate/route.ts       ← ISR-Webhook (revalidateTag, REVALIDATE_SECRET)
 ├── lib/
 │   ├── firebase/
-│   │   ├── client.ts                 ← Firebase Client SDK (Auth, Firestore, Storage)
-│   │   └── admin.ts                  ← Firebase Admin SDK (Server-seitig)
-│   ├── api/
-│   │   ├── client.ts                 ← Fetch-Wrapper zum .NET API
-│   │   ├── services.ts
-│   │   ├── pricing.ts
-│   │   ├── testimonials.ts
-│   │   └── contact.ts
-│   └── hooks/
-│       ├── useAuth.ts                ← Firebase Auth Hook
-│       └── useServices.ts
-├── middleware.ts                     ← Firebase Auth Route Protection
+│   │   └── client.ts                 ← Firebase Client SDK (Auth + Storage)
+│   └── api/
+│       ├── client.ts                 ← Fetch-Wrapper (NEXT_PUBLIC_API_URL, für Client Components)
+│       └── server.ts                 ← Fetch-Wrapper (API_URL, ISR-Tags, für Server Components)
 ├── types/
-│   ├── service.ts
-│   ├── pricing.ts
-│   ├── testimonial.ts
-│   ├── contact.ts
-│   └── firebase.ts
+│   └── index.ts                      ← Service, Pricing, Testimonial, ContactFormData
+├── middleware.ts                     ← [Phase 3] Firebase Auth Route Protection
 ├── public/
-│   ├── images/                       ← Statische WebP-Assets (Migration)
-│   ├── fonts/
-│   ├── robots.txt
-│   └── sitemap.xml
+│   ├── images/                       ← WebP-Assets (aus wwwroot/images/ migriert)
+│   └── fonts/                        ← Inter WOFF2-Dateien (aus wwwroot/fonts/ migriert)
 ├── next.config.ts
-├── tailwind.config.ts
 ├── tsconfig.json
 ├── .env.local.example
 └── Dockerfile
@@ -104,87 +84,170 @@ frontend/
 
 ## Rendering-Strategie
 
-| Seite | Strategie | Begründung |
-|-------|-----------|------------|
-| `/` (Startseite) | ISR (60 Min) | SEO-kritisch, Inhalte ändern sich selten |
-| `/datenschutz` | SSG (static) | Ändert sich kaum |
-| `/agb` | SSG (static) | Ändert sich kaum |
-| `/impressum` | SSG (static) | Ändert sich kaum |
-| `/admin/*` | CSR (dynamic) | Auth-geschützt, kein SEO nötig |
+| Seite | Strategie | Revalidierung |
+|-------|-----------|---------------|
+| `/` (Startseite) | ISR | 10 Min (`revalidateTag`) |
+| `/datenschutz` | SSG (static) | — |
+| `/agb` | SSG (static) | — |
+| `/impressum` | SSG (static) | — |
+| `/admin/*` | CSR / dynamic | — (Phase 3) |
+
+### Datenfluss Startseite
 
 ```typescript
-// app/page.tsx — ISR (Incremental Static Regeneration)
-export const revalidate = 3600; // Alle 60 Minuten neu generieren
-
+// app/page.tsx — Server Component, ISR
 export default async function HomePage() {
-  // Server Component: direkt vom .NET API fetchen (kein Client-JS)
   const [services, pricing, testimonials] = await Promise.all([
-    fetch(`${process.env.API_URL}/api/services`, { next: { revalidate: 3600 } }),
-    fetch(`${process.env.API_URL}/api/pricing`,  { next: { revalidate: 3600 } }),
-    fetch(`${process.env.API_URL}/api/testimonials`, { next: { revalidate: 3600 } }),
-  ]).then(rs => Promise.all(rs.map(r => r.json())));
+    fetchApi<Service[]>("/api/services", { tags: ["services"] }),
+    fetchApi<Pricing[]>("/api/pricing",  { tags: ["pricing"] }),
+    fetchApi<Testimonial[]>("/api/testimonials", { tags: ["testimonials"] }),
+  ]);
+  // Graceful fallback wenn API beim Build nicht erreichbar:
+  const serviceList = services ?? [];
+  // ...
+}
+```
 
-  return (
-    <main>
-      <HeroSection />
-      <LeistungenSection services={services} />
-      <PreiseSection pricing={pricing} />
-      <ErfolgeSection testimonials={testimonials} />
-      <KontaktSection />
-    </main>
-  );
+### Server-seitiger Fetch-Wrapper
+
+```typescript
+// lib/api/server.ts — nur in Server Components / Route Handlers verwenden
+const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? '';
+
+export async function fetchApi<T>(
+  path: string,
+  options?: { revalidate?: number; tags?: string[] }
+): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      next: {
+        revalidate: options?.revalidate ?? 600,
+        tags: options?.tags,
+      },
+    });
+    if (!res.ok) { console.error(`API ${res.status}: ${path}`); return null; }
+    return res.json();
+  } catch (err) {
+    console.error(`fetchApi failed for ${path}:`, err);
+    return null;
+  }
 }
 ```
 
 ---
 
-## Firebase Auth Integration
-
-### Client SDK Setup
+## ISR Revalidierung bei CMS-Änderung
 
 ```typescript
-// lib/firebase/client.ts
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+// app/api/revalidate/route.ts
+import { revalidateTag } from "next/cache";
 
-const firebaseConfig = {
-  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
+export async function POST(request: NextRequest) {
+  const secret = request.headers.get("x-revalidate-secret");
+  if (secret !== process.env.REVALIDATE_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { tag } = await request.json().catch(() => ({}));
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-
-export const auth    = getAuth(app);
-export const db      = getFirestore(app);
-export const storage = getStorage(app);
+  if (!tag || tag === "all") {
+    revalidateTag("services", "max");   // Next.js 16: 2. Argument nötig!
+    revalidateTag("pricing",  "max");
+    revalidateTag("testimonials", "max");
+  } else {
+    revalidateTag(tag, "max");
+  }
+  return NextResponse.json({ revalidated: true, tag });
+}
 ```
 
-### Middleware (Route Protection)
+> **Hinweis Next.js 16:** `revalidateTag(tag)` ist deprecated.
+> Zweites Argument `"max"` (stale-while-revalidate Semantik) ist Pflicht.
+
+Ein Webhook im universal-cms-Projekt (Event `entry.published`) soll künftig diesen Endpunkt aufrufen:
+```
+POST /api/revalidate
+Header: x-revalidate-secret: <REVALIDATE_SECRET>
+Body:   { "tag": "services" }   // oder "all" für alles
+```
+
+---
+
+## Kontaktformular (Client Component)
 
 ```typescript
-// middleware.ts
-import { NextRequest, NextResponse } from 'next/server';
+// app/sections/KontaktSection.tsx — 'use client'
+// Zod v4 Syntax (geändert gegenüber v3):
+const schema = z.object({
+  service: z.enum(["Terrassenreinigung", ...] as const, {
+    error: "Bitte auswählen"     // v4: 'error' statt 'errorMap'
+  }),
+  privacyAccepted: z.literal(true, {
+    error: "Datenschutz akzeptieren"
+  }),
+  // ...
+});
+```
+
+POST geht an `.NET API /api/contact` — kein Firestore, nur E-Mail (SMTP).
+
+---
+
+## Brand-Farben (Tailwind v4 `@theme`)
+
+```css
+/* app/globals.css */
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+  --color-moss-green:       #556b2f;
+  --color-moss-green-dark:  #455725;
+  --color-beige-sand:       #f5e6ca;
+  --color-beige-sand-dark:  #e0d5b9;
+  --color-off-white:        #faf9f6;
+  --color-dark-gray:        #333333;
+  --color-light-gray:       #666666;
+}
+```
+
+Verwendung: `bg-moss-green`, `text-beige-sand`, `border-off-white`, etc.
+
+In Tailwind v4 ist **kein** `tailwind.config.ts` mehr nötig.
+
+---
+
+## Firebase Auth Integration (Phase 3)
+
+### Client SDK — aktueller Stand
+
+```typescript
+// lib/firebase/client.ts (implementiert)
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+export const auth    = getAuth(app);
+export const storage = getStorage(app);
+// getFirestore() wird erst in Phase 3 hinzugefügt, wenn Admin-UI benötigt
+```
+
+### Middleware (Phase 3 — noch nicht implementiert)
+
+```typescript
+// middleware.ts — ausstehend
 import { authMiddleware } from 'next-firebase-auth-edge';
 
 export async function middleware(request: NextRequest) {
   return authMiddleware(request, {
-    loginPath:   '/admin/login',
-    logoutPath:  '/admin/logout',
-    apiKey:      process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-    cookieName:  'AuthToken',
+    loginPath:    '/admin/login',
+    logoutPath:   '/admin/logout',
+    apiKey:       process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+    cookieName:   'AuthToken',
     cookieSecret: process.env.COOKIE_SECRET!,
     cookieSerializeOptions: {
-      path: '/',
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure:   process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 Tage
+      maxAge:   60 * 60 * 24 * 7,
     },
     serviceAccount: {
       projectId:   process.env.FIREBASE_PROJECT_ID!,
@@ -193,151 +256,23 @@ export async function middleware(request: NextRequest) {
     },
   });
 }
-
-export const config = {
-  matcher: ['/admin/:path*'],
-};
+export const config = { matcher: ['/admin/:path*'] };
 ```
-
-### Login-Seite
-
-```typescript
-// app/admin/login/page.tsx
-'use client';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase/client';
-
-export default function LoginPage() {
-  const handleLogin = async (email: string, password: string) => {
-    const credential = await signInWithEmailAndPassword(auth, email, password);
-    const idToken = await credential.user.getIdToken();
-    // Token als HttpOnly-Cookie setzen (via next-firebase-auth-edge)
-    await fetch('/admin/login', {
-      method: 'POST',
-      body: JSON.stringify({ idToken }),
-    });
-    window.location.href = '/admin';
-  };
-  // ...
-}
-```
-
----
-
-## Error Handling
-
-### Error Boundary (API-Ausfall)
-
-Next.js App Router nutzt `error.tsx` Dateien als Error Boundaries:
-
-```typescript
-// app/error.tsx — globaler Fallback wenn API nicht erreichbar
-'use client';
-export default function Error({ reset }: { reset: () => void }) {
-  return (
-    <div className="text-center py-20">
-      <h2>Seite konnte nicht vollständig geladen werden.</h2>
-      <p>Bitte versuche es erneut oder kontaktiere uns direkt.</p>
-      <a href="mailto:info@powercleanniederrhein.de">
-        info@powercleanniederrhein.de
-      </a>
-      <button onClick={reset}>Erneut versuchen</button>
-    </div>
-  );
-}
-```
-
-```typescript
-// app/not-found.tsx — 404 Seite
-export default function NotFound() {
-  return (
-    <div className="text-center py-20">
-      <h2>Seite nicht gefunden</h2>
-      <a href="/">Zurück zur Startseite</a>
-    </div>
-  );
-}
-```
-
-Wenn die `.NET API` beim SSR-Rendern nicht erreichbar ist, zeigt Next.js
-den `error.tsx` Fallback — die Seite bleibt nutzbar mit Kontaktmöglichkeit.
-
----
-
-## ISR Revalidierung bei CMS-Änderung
-
-Wenn im Directus CMS etwas geändert wird, soll die Next.js-Seite automatisch neu gebaut werden:
-
-```typescript
-// app/api/revalidate/route.ts
-import { revalidatePath } from 'next/cache';
-import { NextRequest } from 'next/server';
-
-export async function POST(req: NextRequest) {
-  const secret = req.headers.get('x-revalidate-secret');
-  if (secret !== process.env.REVALIDATE_SECRET) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  // Startseite neu generieren
-  revalidatePath('/');
-  return Response.json({ revalidated: true });
-}
-```
-
-Directus Flow (Webhook) ruft diesen Endpunkt auf, sobald ein Inhalt veröffentlicht wird.
 
 ---
 
 ## SEO (Metadata API)
 
 ```typescript
-// app/layout.tsx
-import type { Metadata } from 'next';
-
+// app/layout.tsx — implementiert
 export const metadata: Metadata = {
   metadataBase: new URL('https://powercleanniederrhein.de'),
-  title: {
-    default: 'Power Clean Niederrhein – Professionelle Reinigung',
-    template: '%s | Power Clean Niederrhein',
-  },
-  description: 'Terrassenreinigung, Gehwegreinigung, Winterdienst im Niederrhein.',
-  openGraph: {
-    images: ['/images/cleanTerrasseHeader.webp'],
-    locale: 'de_DE',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://powercleanniederrhein.de',
-  },
+  title: 'Power Clean Niederrhein – Professionelle Hochdruckreinigung & Winterdienst',
+  description: '...',
 };
 ```
 
-```typescript
-// JSON-LD Structured Data
-export default function RootLayout({ children }) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: 'Power Clean Niederrhein',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: 'Thielenstr. 3',
-      addressLocality: 'Goch',
-      postalCode: '47574',
-      addressCountry: 'DE',
-    },
-    email: 'info@powercleanniederrhein.de',
-  };
-  return (
-    <html lang="de">
-      <head>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
-}
-```
+JSON-LD Structured Data für LocalBusiness ist noch nicht implementiert — empfohlen für Phase 2 Abschluss.
 
 ---
 
@@ -346,11 +281,11 @@ export default function RootLayout({ children }) {
 ```bash
 # frontend/.env.local.example
 
-# .NET API URL (intern in Docker: http://api:8080)
-API_URL=http://api:8080
-NEXT_PUBLIC_API_URL=https://powercleanniederrhein.de
+# .NET API
+API_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://localhost:5000
 
-# Firebase (öffentlich — nur Client-Konfiguration)
+# Firebase (öffentlich — aus Firebase Console: Projekteinstellungen > Deine Apps)
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=
@@ -358,18 +293,18 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 
-# Firebase Admin (geheim — nur serverseitig!)
+# Firebase Admin (geheim — niemals mit NEXT_PUBLIC_ prefixen!)
 FIREBASE_PROJECT_ID=
 FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=       # "-----BEGIN PRIVATE KEY-----\n..."
+FIREBASE_PRIVATE_KEY=     # "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
 # Next.js
-COOKIE_SECRET=ZufälligerStringMin32Zeichen
-REVALIDATE_SECRET=ZufälligerString
+COOKIE_SECRET=            # min. 32 Zeichen: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+REVALIDATE_SECRET=        # beliebig zufällig: gleicher Befehl
 ```
 
-> **Achtung:** `NEXT_PUBLIC_*` Variablen sind im Browser-Bundle sichtbar.
-> Alle anderen (besonders `FIREBASE_PRIVATE_KEY`) niemals mit `NEXT_PUBLIC_` prefixen!
+> **Achtung:** `NEXT_PUBLIC_*` sind im Browser-Bundle sichtbar.
+> `FIREBASE_PRIVATE_KEY`, `COOKIE_SECRET`, `REVALIDATE_SECRET` niemals mit `NEXT_PUBLIC_` prefixen!
 
 ---
 
@@ -379,14 +314,13 @@ REVALIDATE_SECRET=ZufälligerString
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --frozen-lockfile
 COPY . .
 RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production
-# Nicht als root laufen
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 RUN addgroup --system nodejs && adduser --system nextjs --ingroup nodejs
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
@@ -396,35 +330,27 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 ```
 
-```typescript
-// next.config.ts
-export default {
-  output: 'standalone',    // Minimales Docker-Image
-  images: {
-    remotePatterns: [
-      { hostname: 'firebasestorage.googleapis.com' },   // Firebase Storage Bilder
-    ],
-  },
-};
-```
-
 ---
 
-## Migration von Blazor
+## Migration von Blazor — Mapping
 
-| Blazor-Datei | Next.js-Pendant |
-|-------------|-----------------|
-| `HeroSection.razor` | `components/sections/HeroSection.tsx` |
-| `LeistungenSection.razor` | `components/sections/LeistungenSection.tsx` |
-| `PreiseSection.razor` | `components/sections/PreiseSection.tsx` |
-| `ZusatzleistungenSection.razor` | `components/sections/ZusatzleistungenSection.tsx` |
-| `ErfolgeSection.razor` | `components/sections/ErfolgeSection.tsx` |
-| `KontaktSection.razor` | `components/sections/KontaktSection.tsx` |
-| `NavMenu.razor` | `components/layout/NavMenu.tsx` |
-| `Footer.razor` | `components/layout/Footer.tsx` |
-| `App.razor` (Meta-Tags) | `app/layout.tsx` (Next.js Metadata API) |
-| `Datenschutz.razor` | `app/datenschutz/page.tsx` |
-| `AGB.razor` | `app/agb/page.tsx` |
-| `Impressum.razor` | `app/impressum/page.tsx` |
-| `app.css` | `app/globals.css` + Tailwind |
-| `wwwroot/images/` | `public/images/` |
+| Blazor-Datei | Next.js-Pendant | Status |
+|-------------|-----------------|--------|
+| `HeroSection.razor` | `app/sections/HeroSection.tsx` | ✅ |
+| `LeistungenSection.razor` | `app/sections/LeistungenSection.tsx` | ✅ |
+| `PreiseSection.razor` | `app/sections/PreiseSection.tsx` | ✅ |
+| `ZusatzleistungenSection.razor` | `app/sections/ZusatzleistungenSection.tsx` | ✅ |
+| `ErfolgeSection.razor` | `app/sections/ErfolgeSection.tsx` | ✅ |
+| `KontaktSection.razor` | `app/sections/KontaktSection.tsx` | ✅ |
+| `NavMenu.razor` | `app/components/NavMenu.tsx` | ✅ |
+| `Footer.razor` | `app/components/Footer.tsx` | ✅ |
+| `App.razor` (Meta-Tags) | `app/layout.tsx` | ✅ |
+| `Datenschutz.razor` | `app/datenschutz/page.tsx` | ✅ |
+| `AGB.razor` | `app/agb/page.tsx` | ✅ |
+| `Impressum.razor` | `app/impressum/page.tsx` | ✅ |
+| `app.css` | `app/globals.css` + Tailwind v4 | ✅ |
+| `wwwroot/images/` | `public/images/` | ✅ |
+| `wwwroot/fonts/` | `public/fonts/` | ✅ |
+| `ScrollToTop.razor` | Nicht nötig (Next.js scrollt nativ) | ✅ |
+| `AdminEndpoints` | `app/admin/` | ⏳ Phase 3 |
+| `middleware.ts` | Route Protection | ⏳ Phase 3 |

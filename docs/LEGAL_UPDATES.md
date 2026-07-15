@@ -18,26 +18,36 @@ auf die Datenschutzerklärung — das bleibt korrekt.
 
 ### Was sich ändert und warum
 
+Statt einer eigenen Firebase-Instanz nutzt das Projekt jetzt das externe, self-hostete
+**universal-cms** (`cms.webappniederrhein.de`) — Bilder werden von dessen Media-Endpunkt
+ausgeliefert (`https://cms.webappniederrhein.de/media/...`), der intern von Firebase Storage
+(Google Cloud) gestützt wird.
+
 | Dienst | Besucher-Kontakt? | Datenschutz-Eintrag nötig? |
 |--------|-------------------|--------------------------|
-| Firebase Auth | Nein (nur interner Admin-Login) | Nein |
-| Firebase Storage | **Ja** (Browser lädt Bilder von Google-Servern) | **Ja** |
-| Directus CMS | Nein (rein internes Tool) | Nein |
+| universal-cms — Admin-Login | Nein (nur interner Redakteurs-Zugang, fremdes Projekt des Betreibers) | Nein |
+| universal-cms — Bildauslieferung (`cms.webappniederrhein.de/media/...`) | **Ja** (Browser lädt Bilder von dieser Domain, dahinter Firebase Storage/Google) | **Ja** |
 | .NET API | Ja (bereits als Hoster / Backend abgedeckt) | Kein neuer Abschnitt |
 
-### Einzige notwendige Ergänzung: Abschnitt „Firebase Storage"
+**⚠️ Rechtlich zu prüfen (kein Ersatz für anwaltliche Beratung):** Der folgende Textentwurf muss
+noch angepasst werden — Domain und Formulierung (`cms.webappniederrhein.de` statt einer eigenen
+`firebasestorage.googleapis.com`-URL) sowie der Umstand, dass es sich um eine vom Betreiber
+selbst gehostete, aber technisch fremde/geteilte Instanz handelt.
+
+### Einzige notwendige Ergänzung: Abschnitt „Bildauslieferung über universal-cms"
 
 Neuer Abschnitt nach dem aktuellen Abschnitt 9 (Google Analytics) einfügen.
 Bisheriger Abschnitt 10 (Streitschlichtung) wird zu Abschnitt 11.
 
 ```
-Abschnitt 10 — Firebase Storage (Bildhosting)
+Abschnitt 10 — Bildauslieferung über universal-cms
 
-Auf dieser Website werden Bilder über Firebase Storage eingebunden,
-einen Dienst der Google Ireland Limited, Gordon House, Barrow Street,
-Dublin 4, Irland. Wenn Sie eine Seite mit solchen Bildern aufrufen,
-stellt Ihr Browser eine direkte Verbindung zu den Servern von Google her.
-Dabei wird unter anderem Ihre IP-Adresse an Google übermittelt.
+Auf dieser Website werden Bilder über cms.webappniederrhein.de eingebunden,
+ein selbstgehostetes Content-Management-System des Betreibers, das intern
+Firebase Storage nutzt (ein Dienst der Google Ireland Limited, Gordon House,
+Barrow Street, Dublin 4, Irland). Wenn Sie eine Seite mit solchen Bildern
+aufrufen, stellt Ihr Browser eine direkte Verbindung zu diesem Server her.
+Dabei wird unter anderem Ihre IP-Adresse übermittelt.
 
 Zweck: Bereitstellung und schnelle Auslieferung von Bild-Dateien
 (Fotos unserer Leistungen und Referenzprojekte).
@@ -45,8 +55,9 @@ Zweck: Bereitstellung und schnelle Auslieferung von Bild-Dateien
 Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse
 an der optimalen Darstellung unserer Website).
 
-Speicherort: Das Firebase-Projekt ist in der Region europe-west3
-(Frankfurt, Deutschland) gehostet. Die Daten verbleiben innerhalb der EU.
+Speicherort: Das zugrundeliegende Firebase-Projekt ist in der Region
+europe-west3 (Frankfurt, Deutschland) gehostet. Die Daten verbleiben
+innerhalb der EU.
 
 Auftragsverarbeitung: Mit Google Ireland Limited besteht ein Vertrag
 zur Auftragsverarbeitung gemäß Art. 28 DSGVO
@@ -57,10 +68,8 @@ Weitere Informationen: https://policies.google.com/privacy
 
 ### Was NICHT erwähnt werden muss
 
-- **Firebase Auth** — nur für interne Admin-Benutzer (1–2 Personen),
+- **universal-cms Admin-Login** — nur für interne Redakteure (1–2 Personen),
   kein Website-Besucher interagiert damit. Kein Eintrag nötig.
-- **Directus** — rein internes CMS-Tool, nicht vom Besucher erreichbar.
-  Kein Eintrag nötig.
 - **Kontaktformular** — bleibt unverändert (SMTP-E-Mail).
   Bestehender Abschnitt „Kontaktformular" bleibt korrekt.
 

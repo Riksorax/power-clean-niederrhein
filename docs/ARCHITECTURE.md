@@ -1,6 +1,6 @@
 # Architektur-Übersicht — Power Clean Niederrhein
 
-## Ist-Zustand
+## Vorheriger Stand (abgelöst)
 
 ```
 Browser
@@ -15,7 +15,7 @@ Blazor Server (.NET 9)
   └── Hardcoded Content (Services, Preise, Testimonials)
 ```
 
-**Probleme des aktuellen Stands:**
+**Probleme des damaligen Stands:**
 - Jede Inhaltsänderung erfordert Code-Änderung + Deployment
 - Kein CMS — Kunde kann Inhalte nicht selbst pflegen
 - UI und Geschäftslogik nicht getrennt
@@ -26,39 +26,37 @@ Blazor Server (.NET 9)
 
 ## Ziel-Architektur
 
+Admin-Login und Content-Pflege laufen komplett über **universal-cms** — ein bereits
+self-hostetes, projektübergreifendes Headless-CMS des Betreibers (`cms.webappniederrhein.de`).
+Die Next.js-App braucht deshalb **kein eigenes `/admin`** und **keine eigene Firebase Auth/Storage-
+Instanz** mehr — beides bringt das CMS schon mit, geteilt über mehrere Websites hinweg.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Browser / Next.js                        │
-│                                                             │
-│   Öffentliche Seite          Admin-Bereich (/admin)         │
-│   (SSR/SSG, SEO)             (Firebase Auth geschützt)      │
-└────────┬──────────────────────────────┬────────────────────┘
-         │ HTTPS                        │ HTTPS + Firebase JWT
-         ▼                              ▼
-┌─────────────────────┐    ┌─────────────────────────────────┐
-│   .NET Minimal API  │    │         Directus CMS            │
-│                     │    │   (Admin UI für Redakteure)      │
-│ - Content ausliefern│    │   - Services, Preise, Seiten     │
-│ - Firebase JWT prüfen    │   - Via .NET API abgerufen       │
-│ - Kontaktformular   │    └─────────────────────────────────┘
-│   → SMTP E-Mail     │
-│   (unverändert)     │
-└────────┬────────────┘
-         │
-    ┌────┴─────────────────────────────────┐
-    │                                      │
-    ▼                                      ▼
-┌──────────────────┐           ┌───────────────────────────┐
-│  Directus CMS    │           │      Firebase (Google)    │
-│  (SQLite/PG)     │           │                           │
-│  Hetzner DE      │           │  Auth    — Admin-Login    │
-│                  │           │  Storage — Bilder         │
-│  Services        │           │                           │
-│  Preise          │           │  (Region: europe-west3)   │
-│  Testimonials    │           └───────────────────────────┘
-│  Seiten          │
-└──────────────────┘
+┌──────────────────────┐        ┌──────────────────────────────┐
+│  Browser (Website)   │        │  Browser (Redakteur)         │
+│  powercleanniederrhein.de     │  cms.webappniederrhein.de     │
+└──────────┬───────────┘        └──────────────┬───────────────┘
+           │ HTTPS                             │ HTTPS + Firebase Auth
+           ▼                                   ▼
+┌──────────────────────┐        ┌──────────────────────────────┐
+│  Next.js 16 (SSR/ISR)│        │       universal-cms          │
+│  öffentliche Seite   │        │  (Admin-UI, fremdes Projekt,  │
+└──────────┬───────────┘        │   self-hosted, Firebase Auth  │
+           │ HTTPS (intern)     │   + Storage bereits intern)   │
+           ▼                    └──────────────┬───────────────┘
+┌──────────────────────┐                       │
+│  .NET Minimal API     │  GET /delivery/...    │
+│  - Content ausliefern │──────────────────────►│ (x-api-key)
+│  - Preview-Proxy      │  GET /api/preview/... │
+│  - Kontaktformular     │──────────────────────►│ (kurzlebiges Token)
+│    → SMTP E-Mail      │
+│    (unverändert)      │
+└───────────────────────┘
 ```
+
+Das Frontend spricht **nie direkt** mit universal-cms — alle externen Aufrufe laufen über die
+.NET API (`UniversalCmsContentService`, `PreviewEndpoints`), damit z.B. der API-Key nie im Browser
+landet.
 
 ---
 
@@ -66,73 +64,62 @@ Blazor Server (.NET 9)
 
 | Dienst | Technologie | Zweck | Hosting |
 |--------|-------------|-------|---------|
-| Frontend | Next.js 15 + TypeScript | Öffentliche Website + Admin-UI | Docker / Hetzner |
-| API | ASP.NET Minimal API (.NET 9) | Business-Logik, JWT-Validierung | Docker / Hetzner |
-| CMS | Directus 11 | Inhalte verwalten (Admin-UI) | Docker / Hetzner |
-| Datenbank | SQLite (Entwicklung) / PostgreSQL (Produktion) | Directus-Datenhaltung | Docker / Hetzner |
-| Auth | Firebase Authentication | Admin-Login (kein eigenes User-Mgmt) | Google Cloud |
-| Bilder | Firebase Storage | Bild-Upload (Admin) + Auslieferung auf Website | Google Cloud (EU) |
+| Frontend | **Next.js 16** + TypeScript | Öffentliche Website (SSR/ISR) | Docker / Hetzner |
+| API | ASP.NET Minimal API (**.NET 10**) | Content ausliefern, Kontaktformular, Preview-Proxy | Docker / Hetzner |
+| CMS | universal-cms (fremdes Projekt, self-hosted) | Inhalte verwalten, Admin-Login, Bild-Upload | Hetzner DE, `cms.webappniederrhein.de` |
 | Proxy | Traefik v3 | TLS, Routing | Hetzner |
-
----
-
-## Datenfluss
-
-### 1. Öffentliche Seite (SSR/SSG)
-
-```
-Next.js Server Component
-  → GET /api/services          (.NET API)
-    → Directus REST API         (intern, Service-Token)
-      → SQLite/PostgreSQL
-  ← JSON
-← HTML gerendert (SSR/ISR)
-```
-
-### 2. Kontaktformular
-
-```
-Browser (Next.js)
-  → POST /api/contact          (.NET API)
-    → Validierung
-    → SMTP E-Mail               (EmailService — unverändert aus Blazor)
-  ← { success: true }
-```
-
-### 3. Admin-Login & CMS
-
-```
-Browser (/admin)
-  → Firebase Auth (Google / E-Mail)
-  ← Firebase ID Token (JWT)
-
-  → GET /api/admin/...         (.NET API, mit JWT im Header)
-    → JWT validieren            (Firebase Admin SDK)
-    → Directus API              (intern, Service-Token)
-  ← Daten
-```
-
-### 4. Bild-Upload (Admin)
-
-```
-Browser (/admin/upload)
-  → Firebase Auth Token validieren
-  → Firebase Storage SDK direkt  (Client-seitig, Storage Rules)
-  ← Download-URL
-  → .NET API: Directus-Eintrag aktualisieren (mit URL)
-```
 
 ---
 
 ## Phasen-Übersicht
 
-| Phase | Inhalt |
-|-------|--------|
-| **1** | .NET Minimal API + JSON-Datenhaltung (Migration von Blazor) |
-| **2** | Next.js Frontend (Ablösung Blazor, SSR/SSG) |
-| **3** | Firebase Auth + Storage (Admin-Login, Bild-Upload) |
-| **4** | Directus CMS + Admin-Bereich in Next.js |
-| **5** | PostgreSQL für Directus (Produktion), Backup-Strategie |
+| Phase | Inhalt | Status |
+|-------|--------|--------|
+| **1** | .NET Minimal API + JSON-Datenhaltung | ✅ Fertig |
+| **2** | Next.js Frontend (Ablösung Blazor, SSR/ISR) | ✅ Fertig |
+| **3** | Anbindung an universal-cms (`UniversalCmsContentService`, Preview-Proxy) | ✅ Code fertig — Collections/Einträge im CMS-Admin noch manuell anzulegen |
+| **4** | ISR-Revalidierung per Webhook bei Veröffentlichung | ⏳ Geplant (siehe `docs/CMS.md`) |
+
+---
+
+## Datenfluss
+
+### 1. Öffentliche Seite (ISR)
+
+```
+Next.js Server Component (page.tsx)
+  → fetchApi("/api/services")          ← lib/api/server.ts (API_URL intern)
+    → GET /api/services                (.NET API, Output-Cache 10 Min)
+      → JsonContentService             (Fallback: keine UniversalCms:BaseUrl konfiguriert)
+      → UniversalCmsContentService     (GET /delivery/powercleanniederrhein/leistungen, x-api-key)
+  ← JSON
+← HTML gerendert (ISR, 10 Min Cache, revalidateTag-fähig)
+```
+
+### 2. Kontaktformular
+
+```
+Browser (KontaktSection.tsx — Client Component)
+  → POST /api/contact               (.NET API, via NEXT_PUBLIC_API_URL)
+    → Validierung (DataAnnotations)
+    → Rate Limiting (3/10 Min)
+    → SMTP E-Mail                   (EmailService — 1:1 aus Blazor)
+  ← { success: true } / 429
+```
+
+### 3. Live-Vorschau eines Entwurfs
+
+```
+Redakteur klickt "Vorschau" im CMS-Admin-Panel (cms.webappniederrhein.de)
+  → CMS erzeugt kurzlebigen (10 Min) signierten Token
+  → öffnet https://powercleanniederrhein.de/preview/{collectionSlug}/{entryId}?token=...
+
+Next.js (app/preview/[collectionSlug]/[entryId]/page.tsx)
+  → fetch(`${API_URL}/api/preview/${token}`)        (no-store, kein ISR-Cache)
+    → .NET API: GET /api/preview/{token}             (PreviewEndpoints.cs, reiner Proxy)
+      → universal-cms: GET /api/preview/{token}      (kein x-api-key nötig, Token ist Nachweis)
+  ← Entwurfsdaten unabhängig vom Veröffentlichungsstatus
+```
 
 ---
 
@@ -140,36 +127,22 @@ Browser (/admin/upload)
 
 ### Warum Next.js statt reinem React?
 
-- **SSR/SSG**: Seiten werden serverseitig gerendert → bessere SEO (für Google Maps, Ranking)
+- **SSR/ISR**: Seiten werden serverseitig gerendert → bessere SEO
 - **App Router**: Layouts, Server Components, parallel Data Fetching
-- **ISR** (Incremental Static Regeneration): Seiten werden gecacht und nur bei CMS-Änderung neu gebaut
+- **ISR** (Incremental Static Regeneration): Seiten nur bei CMS-Änderung neu gebaut
 - **Image Optimization**: `next/image` optimiert WebP-Bilder automatisch
-- **API Routes**: Können .NET API in Entwicklung simulieren oder als Proxy dienen
-
-### Warum Firebase Auth statt eigenem User-Management?
-
-- Kein Implementierungsaufwand für Login, Passwort-Reset, Sessions
-- MFA optional zuschaltbar
-- DSGVO: Nur Admin-User (1–2 Personen) → kein Kundendaten-Problem
-- Firebase Auth-Daten (UID, E-Mail) verlassen die EU nicht zwingend, aber:
-  → Firebase Projekt auf `europe-west3` (Frankfurt) setzen
-
-### Warum Firebase Storage für Bilder?
-
-- Kein eigener Datei-Server nötig
-- CDN-Auslieferung über Google-Infrastruktur (schnell)
-- Einfacher Upload-Flow im Admin-Bereich
-- DSGVO: Region `europe-west3` (Frankfurt) → Daten bleiben in EU
+- **API Routes**: Webhook-Endpunkt für ISR-Revalidierung (`/api/revalidate`)
 
 ### Kontaktformular — E-Mail bleibt unverändert
 
 Das bestehende `EmailService`-System (SMTP) wird **1:1 aus der Blazor-App übernommen**.
-Kein Firestore, keine neue Infrastruktur — Anfragen landen weiterhin direkt per E-Mail.
+Kein Firestore, keine neue Infrastruktur — Anfragen landen direkt per E-Mail.
 
-### Warum Directus für CMS?
+### Warum universal-cms statt Directus?
 
-- Fertige Admin-UI (kein eigenes CMS bauen)
-- REST + GraphQL API out-of-the-box
-- Feingranuläre Berechtigungen
-- Daten auf eigenem Server (Hetzner DE) → volle Kontrolle
-- Kein Vendor Lock-in
+- Bereits self-hosted und produktiv im Einsatz für andere Projekte des Betreibers — kein
+  zusätzlicher Dienst, keine zusätzliche Datenbank
+- Bringt Admin-Login (Firebase Auth) und Bild-Upload (Firebase Storage, intern) schon mit —
+  spart Phase 3 (eigene Firebase-Anbindung) komplett
+- Live-Vorschau unveröffentlichter Entwürfe eingebaut
+- Ein Login für alle Projekte des Betreibers statt pro Website eine eigene CMS-Installation

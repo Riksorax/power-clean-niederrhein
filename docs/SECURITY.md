@@ -2,14 +2,14 @@
 
 ## Bedrohungsmodell
 
-Power Clean Niederrhein ist eine Marketing-Website mit Kontaktformular und Admin-Bereich.
+Power Clean Niederrhein ist eine Marketing-Website mit Kontaktformular. Admin-Login und
+Content-Pflege laufen extern über universal-cms (`cms.webappniederrhein.de`) — dessen
+Bedrohungsmodell wird dort verwaltet, nicht in diesem Repo.
 
 | Angriffsziel | Risiko | Gegenmaßnahme |
 |-------------|--------|---------------|
 | Kontaktformular (Spam, Injection) | Hoch | Rate Limiting, Input-Validierung |
-| Admin-Login (/admin) | Hoch | Firebase Auth, MFA, HttpOnly-Cookies |
-| Directus CMS | Mittel | IP-Whitelist, kein öffentlicher Zugriff |
-| Firebase Storage | Niedrig | Storage Rules, Auth-Pflicht für Uploads |
+| Preview-Proxy (`/api/preview/{token}`) | Niedrig | Kurzlebiges (10 Min), signiertes Token — kein API-Key im Client |
 | Server-Infrastruktur | Mittel | SSH-Härtung, Firewall, kein Root-Zugriff |
 
 ---
@@ -183,31 +183,19 @@ Firebase Console → Authentication → Password policy:
 
 **Direkte SQL-Injection ist in diesem Stack nicht möglich** — aus folgendem Grund:
 
-| Schicht | Datenbankzugriff | Schutz |
+| Schicht | Datenzugriff | Schutz |
 |---------|-----------------|--------|
-| .NET API (Phase 1) | Liest JSON-Dateien — keine DB | entfällt |
-| .NET API (Phase 4) | Spricht mit Directus REST API | kein direktes SQL |
-| Directus | Internes ORM (Knex.js) | Parameterized Queries |
-| Firestore | NoSQL — keine SQL-Syntax | entfällt |
-| PostgreSQL | Nur von Directus erreichbar | internes Netz, kein direkter Zugriff |
+| .NET API | Liest JSON-Dateien oder HTTP von universal-cms | kein direktes SQL |
+| universal-cms | Firestore (Google Cloud) über Google-Client-Bibliothek | kein SQL, eigenes Sicherheitsmodell |
 
-Das .NET API schreibt **nie** eigenes SQL. Alle Datenbankzugriffe laufen
-über Directus als Abstraktionsschicht mit parameterisierten Abfragen.
+Das .NET API schreibt **nie** eigenes SQL und hat keine eigene Datenbank — alle Inhalte kommen
+entweder aus lokalen JSON-Dateien (Entwicklung) oder per HTTP von universal-cms (Produktion).
 
-> PostgreSQL ist ausschließlich im internen Docker-Netz erreichbar
-> und hat keine exponierten Ports — ein direkter Angriff von außen ist
-> strukturell ausgeschlossen (siehe [Abschnitt 10](#10-docker--container-sicherheit)).
+### NoSQL Injection
 
-### NoSQL Injection (Firestore)
-
-Firestore verwendet keine Query-Sprache die injizierbar wäre.
-Der einzige Schreibzugriff auf Firestore ist über das Firebase Admin SDK
-im .NET API — nicht direkt vom Browser.
-
-Firestore Security Rules verbieten alle direkten Browser-Schreibzugriffe:
-```javascript
-allow write: if false;   // Niemand außer Admin SDK
-```
+Dieses Projekt selbst nutzt keine eigene Datenbank. universal-cms nutzt intern Firestore —
+dessen Absicherung ist Sache des CMS, nicht dieses Repos.
+Direkter Browser-Schreibzugriff auf Storage ist durch Security Rules gesperrt (siehe Abschnitt 8).
 
 ### Path Traversal (.NET API — JSON-Datenhaltung Phase 1)
 
@@ -317,35 +305,9 @@ builder.Services.AddRateLimiter(opt =>
 
 ## 7. Firestore Security Rules
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Kontaktanfragen — kein direkter Client-Zugriff
-    match /contacts/{id} {
-      // Lesen: nur verifizierte Admin-User
-      allow read: if request.auth != null
-                  && request.auth.token.email_verified == true;
-      // Schreiben: niemand (nur Firebase Admin SDK / .NET API)
-      allow write: if false;
-    }
-
-    // Standard: alles verboten
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
-```
-
-### Firestore Security Rules testen
-
-```bash
-# Firebase Emulator Suite nutzen
-firebase emulators:start --only firestore
-firebase emulators:exec --only firestore "npm test"
-```
+> **Nicht relevant** — Firestore wird in diesem Projekt nicht verwendet.  
+> Kontaktanfragen werden ausschließlich per SMTP-E-Mail verarbeitet.  
+> Firebase Storage Rules sind in Abschnitt 8 dokumentiert.
 
 ---
 
@@ -457,10 +419,7 @@ obj/
 | `SERVER_USER` | SSH-Benutzer (kein root!) |
 | `SERVER_SSH_KEY` | Privater SSH-Schlüssel |
 | `SMTP_*` | SMTP-Zugangsdaten |
-| `FIREBASE_PRIVATE_KEY` | Firebase Service Account Private Key |
-| `FIREBASE_CLIENT_EMAIL` | Firebase Service Account E-Mail |
-| `DIRECTUS_SECRET` | Zufälliger Directus Secret |
-| `POSTGRES_PASSWORD` | PostgreSQL Passwort |
+| `UNIVERSALCMS_API_KEY` | API-Key des Projekts im universal-cms |
 
 ### Server `.env` Datei
 
@@ -619,9 +578,9 @@ dpkg-reconfigure --priority=low unattended-upgrades
 ### Backend (.NET API)
 - [ ] CORS auf `https://powercleanniederrhein.de` beschränkt
 - [ ] Rate Limiting auf `/api/contact` aktiv (3 Req / 10 Min)
-- [ ] Firebase JWT-Validierung auf allen `/api/admin/*` Endpunkten
+- [ ] `UniversalCms__ApiKey` nur als Secret gesetzt, nie im Repo
 - [ ] Input-Validierung und HTML-Encoding aktiv
-- [ ] Kein eigenes SQL — alle DB-Zugriffe über Directus ORM
+- [ ] Kein eigenes SQL — keine eigene Datenbank in diesem Repo
 - [ ] JSON-Dateipfade nie aus User-Input zusammengesetzt (Path Traversal)
 - [ ] Server-Header entfernt
 - [ ] Non-root Docker-User
@@ -631,29 +590,17 @@ dpkg-reconfigure --priority=low unattended-upgrades
 ### Frontend (Next.js)
 - [ ] CSP Header gesetzt
 - [ ] Security-Header vollständig
-- [ ] Firebase Token als HttpOnly-Cookie (kein localStorage)
 - [ ] `NEXT_PUBLIC_*` enthält keine sensiblen Daten
-- [ ] Keine Directus-URL oder Tokens im Client-Code
-- [ ] Dateinamen bei Upload bereinigt (Sonderzeichen entfernt)
-- [ ] MIME-Type Validierung vor Firebase Storage Upload
+- [ ] Kein API-Key im Client-Code (nur server-seitig via `.NET API`)
 - [ ] Error Boundaries für alle kritischen Sections vorhanden
 
-### Firebase
-- [ ] Firebase-Projekt Region: `europe-west3`
-- [ ] Storage Rules deployed und getestet (`firebase deploy --only storage`)
-- [ ] MFA für Admin-Accounts aktiviert
-- [ ] Passwort-Richtlinie in Firebase Console konfiguriert
-- [ ] Google Cloud DPA abgeschlossen
-- [ ] Firestore Security Rules: `allow write: if false` für alle Collections
-
-### CMS (Directus)
-- [ ] IP-Whitelist für CMS-Domain aktiv
-- [ ] Starkes Admin-Passwort (generiert, min. 20 Zeichen)
-- [ ] API-Token nur mit Read-Rechten für .NET API
-- [ ] Directus nicht direkt vom Browser erreichbar (nur intern)
-- [ ] PostgreSQL nicht öffentlich erreichbar
+### universal-cms (externes Projekt)
+- [ ] API-Key nur mit Lese-Zugriff auf Delivery-API im .NET API hinterlegt
+- [ ] Vanity-Domain/Projekt-Zugriff im CMS-Admin korrekt beschränkt
+- [ ] Details siehe Sicherheitsdoku des universal-cms-Repos selbst
 
 ### DSGVO
-- [ ] Datenschutzerklärung: Firebase Storage Abschnitt ergänzt
+- [ ] Datenschutzerklärung: universal-cms/Firebase (Auth + Storage, kein Firestore für
+      Kontaktanfragen) erwähnt
 - [ ] Cookie-Consent (CCM19) aktualisiert und getestet
 - [ ] Google Analytics feuert erst nach Consent
