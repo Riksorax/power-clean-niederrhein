@@ -16,7 +16,13 @@ namespace PowerClean.Api.Services;
 /// </summary>
 public class UniversalCmsContentService(HttpClient http, IOptions<UniversalCmsOptions> options) : IContentService
 {
-    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+    // AllowReadingFromString: verzeiht, wenn ein Number-Feld im CMS versehentlich als Text-Feld
+    // angelegt wurde (Wert kommt dann als JSON-String "1" statt Zahl 1) - kein Redaktionsstopp nötig.
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+    };
     private readonly UniversalCmsOptions _options = options.Value;
 
     private record DeliveryEntry<T>(string Id, [property: JsonPropertyName("data")] T Data);
