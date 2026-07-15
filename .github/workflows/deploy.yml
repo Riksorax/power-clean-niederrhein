@@ -77,3 +77,22 @@ jobs:
 
             # Alte, ungenutzte Docker-Images aufräumen
             sudo docker image prune -af
+
+            # Beim Docker-Build ist das Backend nicht erreichbar (kein laufender api-Container in
+            # der isolierten Build-Umgebung) - die statisch vorgerenderte Startseite hat direkt nach
+            # jedem Deploy deshalb einen leeren Datenstand, bis er einmal revalidiert wird. Das hier
+            # übernimmt automatisch, was sonst manuell nachgeholt werden müsste.
+            sleep 5
+            docker exec power-clean-frontend wget -qO- \
+              --header "x-revalidate-secret: ${{ secrets.REVALIDATE_SECRET }}" \
+              --header "Content-Type: application/json" \
+              --post-data '{"tag":"all"}' \
+              http://localhost:3000/revalidate || true
+
+            # revalidateTag markiert nur als veraltet - die eigentliche Neu-Generierung läuft erst
+            # beim nächsten Request (stale-while-revalidate). Zwei Nachfass-Anfragen, damit die
+            # Seite für den ersten echten Besucher nach dem Deploy schon frisch ist.
+            sleep 2
+            docker exec power-clean-frontend wget -qO- http://localhost:3000/ > /dev/null || true
+            sleep 2
+            docker exec power-clean-frontend wget -qO- http://localhost:3000/ > /dev/null || true
