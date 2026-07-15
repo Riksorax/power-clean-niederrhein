@@ -40,30 +40,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy to Server
+      # Nur die docker-compose.yaml landet auf dem Server - kein Git-Checkout des ganzen Repos
+      # mehr nötig, die Container laufen ohnehin von den fertig gebauten Images aus Docker Hub.
+      - name: docker-compose.yaml auf Server kopieren
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+          source: docker-compose.yaml
+          target: projekte/${{ github.event.repository.name }}
+
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
           script: |
-            # Projektverzeichnis definieren
-            PROJECT_DIR="$HOME/projekte/${{ github.event.repository.name }}"
-            REPO_URL="https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git"
+            set -e
+            cd "$HOME/projekte/${{ github.event.repository.name }}"
 
-            # Projekt klonen, falls es noch nicht existiert
-            if [ ! -d "$PROJECT_DIR"/.git ]; then
-              # Klonen mit dem Token, falls der Ordner leer oder kein Git-Repo ist
-              rm -rf "$PROJECT_DIR" # Sicherheitshalber leeren Ordner entfernen
-              git clone "$REPO_URL" "$PROJECT_DIR"
-            fi
-
-            # In das Projektverzeichnis wechseln und die neuesten Änderungen holen
-            cd "$PROJECT_DIR"
-            git remote set-url origin "$REPO_URL"
-            git pull origin master
-
-            # Das neueste Docker-Image herunterladen
             sudo sh -c '
               export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}";
               export SMTP_HOST="${{ secrets.SMTP_HOST }}";
@@ -75,19 +72,6 @@ jobs:
               export UNIVERSALCMS_API_KEY="${{ secrets.UNIVERSALCMS_API_KEY }}";
               export REVALIDATE_SECRET="${{ secrets.REVALIDATE_SECRET }}";
               docker compose --file docker-compose.yaml pull
-            '
-
-            # Die Anwendung mit der neuen Konfiguration und dem neuen Image starten/aktualisieren
-            sudo sh -c '
-              export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}";
-              export SMTP_HOST="${{ secrets.SMTP_HOST }}";
-              export SMTP_PORT="${{ secrets.SMTP_PORT }}";
-              export SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}";
-              export SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}";
-              export SMTP_FROM_EMAIL="${{ secrets.SMTP_FROM_EMAIL }}";
-              export SMTP_TO_EMAIL="${{ secrets.SMTP_TO_EMAIL }}";
-              export UNIVERSALCMS_API_KEY="${{ secrets.UNIVERSALCMS_API_KEY }}";
-              export REVALIDATE_SECRET="${{ secrets.REVALIDATE_SECRET }}";
               docker compose --file docker-compose.yaml up -d --remove-orphans
             '
 
