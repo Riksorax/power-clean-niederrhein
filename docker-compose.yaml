@@ -1,43 +1,48 @@
 services:
-  frontend:
+  # Service-Namen bewusst eindeutig (nicht "frontend"/"api") - "traefik-proxy" ist ein geteiltes,
+  # externes Netzwerk über mehrere Projekte hinweg, Docker's eingebettetes DNS löst gleichnamige
+  # Compose-Service-Namen dort projektübergreifend auf (führte zu zufälligem 404 durch Auflösung
+  # auf den falschen Container eines anderen Projekts, siehe Commit-Historie). Aus demselben Grund
+  # auch die Traefik-Router-/Service-Namen in den Labels eindeutig gehalten.
+  power-clean-frontend:
     image: ${DOCKERHUB_USERNAME:-riksorax}/power-clean-frontend:latest
     container_name: power-clean-frontend
     environment:
-      - API_URL=http://api:8080
+      - API_URL=http://power-clean-api:8080
       - REVALIDATE_SECRET=${REVALIDATE_SECRET}
     restart: unless-stopped
     depends_on:
-      - api
+      - power-clean-api
     networks:
       - traefik-proxy
     labels:
       - "traefik.enable=true"
 
       # HTTPS - Hauptdomain
-      - "traefik.http.routers.frontend.rule=Host(`powercleanniederrhein.de`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frontend.priority=20"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.power-clean-frontend.rule=Host(`powercleanniederrhein.de`)"
+      - "traefik.http.routers.power-clean-frontend.entrypoints=websecure"
+      - "traefik.http.routers.power-clean-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.power-clean-frontend.priority=20"
+      - "traefik.http.services.power-clean-frontend.loadbalancer.server.port=3000"
 
       # HTTPS - www → non-www Redirect
-      - "traefik.http.routers.frontend-www.rule=Host(`www.powercleanniederrhein.de`)"
-      - "traefik.http.routers.frontend-www.entrypoints=websecure"
-      - "traefik.http.routers.frontend-www.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frontend-www.middlewares=redirect-www"
+      - "traefik.http.routers.power-clean-frontend-www.rule=Host(`www.powercleanniederrhein.de`)"
+      - "traefik.http.routers.power-clean-frontend-www.entrypoints=websecure"
+      - "traefik.http.routers.power-clean-frontend-www.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.power-clean-frontend-www.middlewares=power-clean-redirect-www"
 
       # HTTP - beides auf HTTPS umleiten
-      - "traefik.http.routers.frontend-web.rule=Host(`powercleanniederrhein.de`) || Host(`www.powercleanniederrhein.de`)"
-      - "traefik.http.routers.frontend-web.entrypoints=web"
-      - "traefik.http.routers.frontend-web.middlewares=https-redirect"
+      - "traefik.http.routers.power-clean-frontend-web.rule=Host(`powercleanniederrhein.de`) || Host(`www.powercleanniederrhein.de`)"
+      - "traefik.http.routers.power-clean-frontend-web.entrypoints=web"
+      - "traefik.http.routers.power-clean-frontend-web.middlewares=power-clean-https-redirect"
 
       # Middlewares
-      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-www.redirectregex.regex=^https://www\\.(.*)"
-      - "traefik.http.middlewares.redirect-www.redirectregex.replacement=https://$${1}"
-      - "traefik.http.middlewares.redirect-www.redirectregex.permanent=true"
+      - "traefik.http.middlewares.power-clean-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.power-clean-redirect-www.redirectregex.regex=^https://www\\.(.*)"
+      - "traefik.http.middlewares.power-clean-redirect-www.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.power-clean-redirect-www.redirectregex.permanent=true"
 
-  api:
+  power-clean-api:
     image: ${DOCKERHUB_USERNAME:-riksorax}/power-clean-api:latest
     container_name: power-clean-api
     environment:
@@ -57,11 +62,11 @@ services:
       - traefik-proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`powercleanniederrhein.de`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.api.priority=30"
-      - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.power-clean-api.rule=Host(`powercleanniederrhein.de`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.power-clean-api.entrypoints=websecure"
+      - "traefik.http.routers.power-clean-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.power-clean-api.priority=30"
+      - "traefik.http.services.power-clean-api.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 30s
