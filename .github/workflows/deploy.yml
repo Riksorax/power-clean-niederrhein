@@ -82,17 +82,25 @@ jobs:
             # der isolierten Build-Umgebung) - die statisch vorgerenderte Startseite hat direkt nach
             # jedem Deploy deshalb einen leeren Datenstand, bis er einmal revalidiert wird. Das hier
             # übernimmt automatisch, was sonst manuell nachgeholt werden müsste.
-            sleep 5
+            #
+            # Fixe sleeps reichten nicht - der neu gestartete Next.js-Container antwortet nicht
+            # zuverlässig innerhalb von 5s (siehe "Connection refused" in einem früheren Lauf),
+            # deshalb hier eine Warteschleife bis der Server tatsächlich antwortet.
+            for i in $(seq 1 15); do
+              docker exec power-clean-frontend wget -qO- http://127.0.0.1:3000/ > /dev/null 2>&1 && break
+              sleep 2
+            done
+
             docker exec power-clean-frontend wget -qO- \
               --header "x-revalidate-secret: ${{ secrets.REVALIDATE_SECRET }}" \
               --header "Content-Type: application/json" \
               --post-data '{"tag":"all"}' \
-              http://localhost:3000/revalidate || true
+              http://127.0.0.1:3000/revalidate || true
 
             # revalidateTag markiert nur als veraltet - die eigentliche Neu-Generierung läuft erst
             # beim nächsten Request (stale-while-revalidate). Zwei Nachfass-Anfragen, damit die
             # Seite für den ersten echten Besucher nach dem Deploy schon frisch ist.
             sleep 2
-            docker exec power-clean-frontend wget -qO- http://localhost:3000/ > /dev/null || true
+            docker exec power-clean-frontend wget -qO- http://127.0.0.1:3000/ > /dev/null || true
             sleep 2
-            docker exec power-clean-frontend wget -qO- http://localhost:3000/ > /dev/null || true
+            docker exec power-clean-frontend wget -qO- http://127.0.0.1:3000/ > /dev/null || true
