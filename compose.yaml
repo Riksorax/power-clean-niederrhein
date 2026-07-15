@@ -1,8 +1,0 @@
-﻿services:
-  powercleanniederrhein:
-    image: powercleanniederrhein
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8082:8082"

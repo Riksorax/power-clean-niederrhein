@@ -33,14 +33,6 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=https://powercleanniederrhein.de
 
-      # Weiterhin das alte Blazor-Image bauen/pushen, solange es laut Cutover-Plan noch aktiv ist
-      - name: Build and push legacy Blazor image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/power-clean-niederrhein:latest
-
   deploy:
     needs: build
     runs-on: ubuntu-latest

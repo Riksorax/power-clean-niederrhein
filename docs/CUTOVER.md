@@ -1,5 +1,10 @@
 # Cutover-Plan — Blazor → Next.js (ohne Downtime)
 
+> **Status: Nicht wie unten beschrieben durchlaufen.** Statt des schrittweisen Parallelbetriebs
+> (Phase A–D) wurde direkt umgeschaltet: `docker-compose.yaml` enthält den `powerclean`-Service
+> nicht mehr, `frontend`/`api` laufen mit `traefik.enable=true`. Dieses Dokument bleibt als
+> Referenz für die Traefik-Routing-Mechanik (Prioritäten, Redirects) erhalten.
+
 ## Ausgangslage
 
 Die aktuelle Produktion läuft als **ein einzelner Blazor Server Container** hinter Traefik.
