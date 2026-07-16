@@ -95,15 +95,32 @@ https://powercleanniederrhein.de/preview/{collectionSlug}/{entryId}?token={token
 
 ### ISR-Revalidierung bei Veröffentlichung
 
-`app/revalidate/route.ts` existiert bereits (ursprünglich für Directus Flows gedacht, liegt
-bewusst **nicht** unter `/api/` — Traefik leitet `/api/*` komplett ans .NET-Backend, eine
-Next.js-eigene Route dort wäre unerreichbar) und erwartet `POST` mit Header
-`x-revalidate-secret` und Body `{ "tag": "services" }`. Sinnvoller Weg,
-das an universal-cms anzubinden: **Webhook** im CMS-Projekt anlegen (Tab „Webhooks", Event
-`entry.published`), Ziel-URL `https://powercleanniederrhein.de/revalidate`. universal-cms
-signiert den Payload per `X-UniversalCms-Signature` (HMAC-SHA256, Secret wird beim Anlegen des
-Webhooks angezeigt) — `route.ts` müsste dafür von der Secret-Header-Prüfung auf eine
-Signaturprüfung umgestellt werden (noch offen, aktuell nicht umgesetzt).
+`app/revalidate/route.ts` liegt bewusst **nicht** unter `/api/` — Traefik leitet `/api/*`
+komplett ans .NET-Backend, eine Next.js-eigene Route dort wäre unerreichbar. Die Route
+akzeptiert zwei Wege, autorisiert zu werden:
+
+1. **universal-cms-Webhook** (automatisch, empfohlen): `X-UniversalCms-Signature`
+   (HMAC-SHA256 über den rohen Body, Secret wird beim Anlegen des Webhooks im CMS angezeigt).
+   Bei jedem Webhook-Event werden alle drei Tags (`services`, `pricing`, `testimonials`)
+   revalidiert — der Payload enthält nur eine `collectionId` (GUID), keine Tag-Namen, daher
+   keine gezielte Revalidierung pro Collection.
+2. **Shared Secret** (manuell/Pipeline): Header `x-revalidate-secret` + Body
+   `{ "tag": "services" | "pricing" | "testimonials" | "all" }`. Wird von
+   `.github/workflows/deploy.yml` für den automatischen Cache-Warmup direkt nach jedem
+   Deploy genutzt (frischer Container hat sonst einen leeren Datenstand aus dem isolierten
+   Docker-Build).
+
+**Einrichtung des Webhooks** (einmalig, im CMS-Admin-Panel unter Projekt
+„powercleanniederrhein" → Tab „Webhooks"):
+
+1. Neuen Webhook anlegen: Name z.B. „Frontend Revalidate", URL
+   `https://powercleanniederrhein.de/revalidate`, Events `entry.published`, `entry.updated`,
+   `entry.deleted`.
+2. Das beim Anlegen angezeigte Secret (`whsec_...`) als GitHub-Repo-Secret
+   `UNIVERSALCMS_WEBHOOK_SECRET` hinterlegen (wird beim Deploy als Umgebungsvariable an den
+   Frontend-Container durchgereicht, siehe `docker-compose.yaml`).
+3. Danach erscheinen Änderungen im CMS **automatisch innerhalb weniger Sekunden** auf der
+   Website — kein manuelles Revalidieren, kein Warten auf das 10-Minuten-ISR-Intervall mehr.
 
 ---
 

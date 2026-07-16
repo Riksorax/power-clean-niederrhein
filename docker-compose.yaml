@@ -10,6 +10,7 @@ services:
     environment:
       - API_URL=http://power-clean-api:8080
       - REVALIDATE_SECRET=${REVALIDATE_SECRET}
+      - UNIVERSALCMS_WEBHOOK_SECRET=${UNIVERSALCMS_WEBHOOK_SECRET}
     restart: unless-stopped
     depends_on:
       - power-clean-api

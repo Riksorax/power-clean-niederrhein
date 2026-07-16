@@ -71,6 +71,7 @@ jobs:
               export SMTP_TO_EMAIL="${{ secrets.SMTP_TO_EMAIL }}";
               export UNIVERSALCMS_API_KEY="${{ secrets.UNIVERSALCMS_API_KEY }}";
               export REVALIDATE_SECRET="${{ secrets.REVALIDATE_SECRET }}";
+              export UNIVERSALCMS_WEBHOOK_SECRET="${{ secrets.UNIVERSALCMS_WEBHOOK_SECRET }}";
               docker compose --file docker-compose.yaml pull
               docker compose --file docker-compose.yaml up -d --remove-orphans
             '
