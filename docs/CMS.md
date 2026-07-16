@@ -114,8 +114,9 @@ akzeptiert zwei Wege, autorisiert zu werden:
 „powercleanniederrhein" → Tab „Webhooks"):
 
 1. Neuen Webhook anlegen: Name z.B. „Frontend Revalidate", URL
-   `https://powercleanniederrhein.de/revalidate`, Events `entry.published`, `entry.updated`,
-   `entry.deleted`.
+   `https://powercleanniederrhein.de/revalidate`, Events `entry.published`, `entry.unpublished`,
+   `entry.updated`, `entry.deleted` (alle vier — ohne `entry.unpublished` bleibt ein auf
+   „Entwurf" zurückgesetzter Eintrag bis zu 10 Minuten weiter sichtbar auf der Website).
 2. Das beim Anlegen angezeigte Secret (`whsec_...`) als GitHub-Repo-Secret
    `UNIVERSALCMS_WEBHOOK_SECRET` hinterlegen (wird beim Deploy als Umgebungsvariable an den
    Frontend-Container durchgereicht, siehe `docker-compose.yaml`).
